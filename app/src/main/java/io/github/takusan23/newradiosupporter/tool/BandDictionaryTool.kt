@@ -109,6 +109,11 @@ object BandDictionary {
         }?.bandNum.toString()
     }
 
+    /** バンド番号からdlMinとdlMaxが取れるように */
+    fun getNRBand(bandNum: Int): BandDictionaryData {
+        return bandNRList.find { it.bandNum == bandNum }!!
+    }
+
 }
 
 /**

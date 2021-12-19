@@ -64,20 +64,28 @@ object NetworkCallback {
     /**
      * 5G(New Radio / NR) 関係のコールバックを受け取る。多分Android 11以上じゃないと無理です
      *
-     * @return [NRType]を返す
+     * @return [NetworkType]を返す
      * */
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun listenNewRadioStatus(context: Context) = callbackFlow {
+    fun listenNetworkStatus(context: Context) = callbackFlow {
         if (PermissionCheckTool.isGranted(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+
+            /** Flowへ値を流す */
+            fun parse(telephonyDisplayInfo: TelephonyDisplayInfo) {
+                when (telephonyDisplayInfo.overrideNetworkType) {
+                    TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO -> trySend(NetworkType.LTE_ADVANCED)
+                    TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_LTE_CA -> trySend(NetworkType.LTE_CA)
+                    TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA -> trySend(NetworkType.NR_SUB6)
+                    TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_ADVANCED -> trySend(NetworkType.NR_MMW)
+                    else -> trySend(NetworkType.NONE)
+                }
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val callback = object : TelephonyCallback(), TelephonyCallback.DisplayInfoListener {
                     override fun onDisplayInfoChanged(telephonyDisplayInfo: TelephonyDisplayInfo) {
-                        when (telephonyDisplayInfo.overrideNetworkType) {
-                            TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA -> trySend(NRType.NR_SUB6)
-                            TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_ADVANCED -> trySend(NRType.NR_MW)
-                        }
+                        parse(telephonyDisplayInfo)
                     }
                 }
                 telephonyManager.registerTelephonyCallback(context.mainExecutor, callback)
@@ -88,10 +96,7 @@ object NetworkCallback {
                     @SuppressLint("MissingPermission", "NewApi")
                     override fun onDisplayInfoChanged(telephonyDisplayInfo: TelephonyDisplayInfo) {
                         super.onDisplayInfoChanged(telephonyDisplayInfo)
-                        when (telephonyDisplayInfo.overrideNetworkType) {
-                            TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA -> trySend(NRType.NR_SUB6)
-                            TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_ADVANCED -> trySend(NRType.NR_MW)
-                        }
+                        parse(telephonyDisplayInfo)
                     }
                 }
                 telephonyManager.listen(callback, PhoneStateListener.LISTEN_DISPLAY_INFO_CHANGED)
@@ -100,12 +105,51 @@ object NetworkCallback {
         }
     }
 
+    /** 両方の結果から最終的な答え[FinalNRType]を出す */
+    fun finalResult(bandData: BandData, networkType: NetworkType): FinalNRType {
+        return when {
+            // Sub6かアンカーLTEバンド接続中 かつ 5Gではない なら 4G 判定
+            networkType == NetworkType.NR_SUB6 && !bandData.isNR -> FinalNRType.ANCHOR_LTE_BAND
+            // Sub6かアンカーLTEバンド接続中 かつ 5G なら Sub6判定
+            networkType == NetworkType.NR_SUB6 && bandData.isNR -> FinalNRType.NR_SUB6
+            // ミリ波はスタンドアロンなのでEN-DCの影響を受けない
+            networkType == NetworkType.NR_MMW -> FinalNRType.NR_MMW
+            // そもそも4G
+            else -> FinalNRType.LTE
+        }
+    }
+
 }
 
-enum class NRType {
-    /** Sub 6 ネットワーク */
+/** 最終的な値を取得するには[NetworkCallback.finalResult]を利用してね */
+enum class NetworkType {
+    /** 特になし。getNetworkType()を利用してね */
+    NONE,
+
+    /** LTE-Advancedが有効（CAと何が違うの？） */
+    LTE_ADVANCED,
+
+    /** キャリアアグリゲーションが有効 */
+    LTE_CA,
+
+    /** 5GのSub6ネットワークか、アンカーLTEバンド圏内の場合 */
     NR_SUB6,
 
     /** ミリ波 ネットワーク もしくは キャリアアグリゲーション（CA）等より速い手段が提供されている場合 */
-    NR_MW,
+    NR_MMW,
+}
+
+
+enum class FinalNRType {
+    /** ピクト表示では5Gだが、実はアンカーLTEバンドの圏内であり、5G接続は利用できないことを示す */
+    ANCHOR_LTE_BAND,
+
+    /** 実際に5GのSub6ネットワークに接続している */
+    NR_SUB6,
+
+    /** 実際に5Gのミリ波ネットワークに接続している */
+    NR_MMW,
+
+    /** そもそも4GだしアンカーLTEバンドの圏内にすらいない */
+    LTE,
 }
