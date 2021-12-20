@@ -14,7 +14,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun CommonItem(icon: Painter, title: String, description: String?) {
+fun CommonItem(
+    icon: Painter,
+    title: String,
+    description: String?,
+    endContent: @Composable (() -> Unit)? = null,
+) {
     Row(
         modifier = Modifier.padding(top = 5.dp, bottom = 5.dp, start = 10.dp, end = 10.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -27,7 +32,7 @@ fun CommonItem(icon: Painter, title: String, description: String?) {
             contentDescription = null,
             // colorFilter = ColorFilter.tint(color = contentColor)
         )
-        Column {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
                 modifier = Modifier.padding(bottom = 5.dp),
@@ -36,6 +41,9 @@ fun CommonItem(icon: Painter, title: String, description: String?) {
             if (description != null) {
                 Text(text = description)
             }
+        }
+        if (endContent != null) {
+            endContent()
         }
     }
 }
