@@ -14,8 +14,8 @@ fun UnlimitedInfo(
     Surface(modifier = modifier) {
         CommonItem(
             icon = painterResource(id = R.drawable.ic_outline_money_24),
-            title = if (isUnlimited) "無制限プランを契約中" else "従量制プランを契約中",
-            description = "料金プラン"
+            title = if (isUnlimited) "定額制（無制限のデータ通信）ネットワークに接続中です" else "従量制（データ通信量に制限）ネットワークに接続中です",
+            description = "従量制か定額制か"
         )
     }
 }
