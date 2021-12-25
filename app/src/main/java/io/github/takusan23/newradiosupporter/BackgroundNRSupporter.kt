@@ -15,7 +15,6 @@ import io.github.takusan23.newradiosupporter.tool.NetworkCallback
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
 
 /**
  * バックグラウンド5G監視サービス
@@ -47,15 +46,11 @@ class BackgroundNRSupporter : Service() {
             // Flowを結合する
             val bandInfoFlow = NetworkCallback.listenBand(this@BackgroundNRSupporter)
             val networkType = NetworkCallback.listenNetworkStatus(this@BackgroundNRSupporter)
-            combine(bandInfoFlow, networkType, ::Pair)
-                .map { (bandData, type) ->
-                    if (bandData != null) {
-                        NetworkCallback.finalResult(bandData, type)
-                    } else FinalNRType.LTE
-                }
-                .collect { finalType ->
-                    showNotification(finalType)
-                }
+            bandInfoFlow.combine(networkType) { bandInfo, type ->
+                if (bandInfo != null) {
+                    NetworkCallback.finalResult(bandInfo, type)
+                } else FinalNRType.LTE
+            }.collect { finalType -> showNotification(finalType) }
         }
     }
 

@@ -15,15 +15,16 @@ import androidx.compose.ui.unit.dp
 import io.github.takusan23.newradiosupporter.BackgroundNRSupporter
 import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.tool.NetworkCallback
-import io.github.takusan23.newradiosupporter.ui.component.BackgroundServiceItem
-import io.github.takusan23.newradiosupporter.ui.component.BandItem
-import io.github.takusan23.newradiosupporter.ui.component.TopInfo
-import io.github.takusan23.newradiosupporter.ui.component.UnlimitedInfo
+import io.github.takusan23.newradiosupporter.ui.component.*
 
-/** ホーム画面 */
+/**
+ * ホーム画面
+ *
+ * @param onNavigate 画面遷移を行う際に呼ばれる
+ * */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(onNavigate: (String) -> Unit) {
     val context = LocalContext.current
 
     // Flowで収集する
@@ -43,9 +44,10 @@ fun HomeScreen() {
 
     Scaffold(
         topBar = {
-            MediumTopAppBar(title = {
-                Text(text = stringResource(id = R.string.app_name))
-            })
+            MediumTopAppBar(
+                title = { Text(text = stringResource(id = R.string.app_name)) },
+                actions = { AboutMenuIcon { onNavigate(NavigationLinkList.SettingScreen) } },
+            )
         },
         content = {
             LazyColumn(

@@ -34,7 +34,16 @@ fun NewRadioSupporterMainScreen() {
                 })
             }
             composable(NavigationLinkList.HomeScreen) {
-                HomeScreen()
+                HomeScreen { navController.navigate(it) }
+            }
+            composable(NavigationLinkList.SettingScreen) {
+                SettingScreen(
+                    onNavigate = { navController.navigate(it) },
+                    onBack = { navController.popBackStack() }
+                )
+            }
+            composable(NavigationLinkList.SettingLicenseScreen) {
+                LicenseScreen { navController.popBackStack() }
             }
         }
     }
