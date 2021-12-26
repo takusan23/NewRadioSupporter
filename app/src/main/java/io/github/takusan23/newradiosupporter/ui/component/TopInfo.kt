@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.tool.FinalNRType
@@ -29,10 +30,11 @@ fun TopInfo(
         Icon(
             modifier = Modifier.size(100.dp),
             painter = painterResource(id = when (finalNRType) {
-                FinalNRType.ANCHOR_LTE_BAND -> R.drawable.ic_android_anchor_lte_band
+                FinalNRType.ANCHOR_BAND -> R.drawable.ic_android_anchor_lte_band
                 FinalNRType.NR_SUB6 -> R.drawable.ic_android_nr_sub6
                 FinalNRType.NR_MMW -> R.drawable.ic_android_nr_mmw
                 FinalNRType.LTE -> R.drawable.ic_android_lte
+                else -> R.drawable.ic_outline_info_24
             }),
             contentDescription = null
         )
@@ -62,10 +64,11 @@ private fun TopMessageInfo(finalNRType: FinalNRType) {
             )
             Text(
                 text = when (finalNRType) {
-                    FinalNRType.ANCHOR_LTE_BAND -> "アンカーLTEバンドの圏内です。表示上では5Gですが、5Gの接続は確立していません。"
-                    FinalNRType.NR_SUB6 -> "5GのSub6ネットワークに接続中です。"
-                    FinalNRType.NR_MMW -> "5Gのミリ波ネットワークに接続中です。"
-                    FinalNRType.LTE -> "4Gに接続中です。"
+                    FinalNRType.ANCHOR_BAND -> stringResource(id = R.string.type_lte_anchor_band)
+                    FinalNRType.NR_SUB6 -> stringResource(id = R.string.type_nr_sub6)
+                    FinalNRType.NR_MMW -> stringResource(id = R.string.type_nr_mmwave)
+                    FinalNRType.LTE -> stringResource(id = R.string.type_lte)
+                    else -> stringResource(id = R.string.loading)
                 },
             )
         }

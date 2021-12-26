@@ -12,7 +12,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.github.takusan23.newradiosupporter.R
 
 /**
  * 権限下さい画面
@@ -36,11 +38,11 @@ fun PermissionScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "権限が必要なので下さい")
+        Text(text = stringResource(id = R.string.request_permission))
         Button(
             modifier = Modifier.padding(10.dp),
             onClick = { permissionRequest.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_PHONE_STATE)) },
-            content = { Text(text = "権限取得") }
+            content = { Text(text = stringResource(id = R.string.request_permission_button)) }
         )
     }
 

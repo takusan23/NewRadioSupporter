@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">NewRadioSupporter</string>
+    <string name="request_permission">Please allow it because you need permission. Location information and transmission authority are used for the purpose of accessing the radio wave condition of the terminal.</string>
+    <string name="request_permission_button">Grant authority</string>
+    <string name="setting">Setting</string>
+    <string name="license">License</string>
+    <string name="open_sourcecode">View source code</string>
+    <string name="open_sourcecode_description">Open on GitHub</string>
+    <string name="service_state_button">Service start / end</string>
+    <string name="background_service_description">Monitor 5G networks in the background</string>
+    <string name="type_lte_anchor_band">Within the anchor band. It is 5G on the display, but the 5G connection has not been established.</string>
+    <string name="type_nr_sub6">Connecting to a 5G Sub6 network.</string>
+    <string name="type_nr_mmwave">Connecting to a 5G millimeter-wave network.</string>
+    <string name="type_lte">Connecting to 4G.</string>
+    <string name="loading">in preparation.</string>
+    <string name="connect_nr">Connecting to 5G.</string>
+    <string name="connect_lte">Connecting to 4G.</string>
+    <string name="connecting_band">Connecting band</string>
+    <string name="carrier_name">Carrier name</string>
+    <string name="earfcn">NRARFCN(EARFCN)</string>
+    <string name="band_info">Band information</string>
 </resources>

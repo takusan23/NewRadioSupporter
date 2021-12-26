@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import io.github.takusan23.newradiosupporter.R
 
 /**
@@ -25,7 +26,7 @@ fun LicenseSettingNavItem(onClick: () -> Unit) {
         content = {
             CommonItem(
                 icon = painterResource(id = R.drawable.ic_outline_info_24),
-                title = "ライセンス",
+                title = stringResource(id = R.string.license),
                 description = null
             )
         }
@@ -47,8 +48,8 @@ fun OpenSourceCodeSettingNevItem(onClick: () -> Unit) {
         content = {
             CommonItem(
                 icon = painterResource(id = R.drawable.ic_outline_open_in_browser_24),
-                title = "ソースコードを見る",
-                description = "GitHubを開きます"
+                title = stringResource(id = R.string.open_sourcecode),
+                description = stringResource(id = R.string.open_sourcecode_description)
             )
         }
     )

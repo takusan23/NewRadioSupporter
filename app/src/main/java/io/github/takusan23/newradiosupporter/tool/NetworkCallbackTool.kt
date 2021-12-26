@@ -6,38 +6,17 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Build
-import android.telephony.PhoneStateListener
-import android.telephony.TelephonyCallback
-import android.telephony.TelephonyDisplayInfo
-import android.telephony.TelephonyManager
+import android.telephony.*
+import io.github.takusan23.newradiosupporter.tool.data.BandData
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.launch
 
 /** ネットワーク関係のコールバック */
 object NetworkCallback {
 
     /**
-     * [BandTool.getBandDataFromEarfcnOrNrafcn]をコールバックで定期的に受け取る
-     *
-     * @return [BandTool.getBandDataFromEarfcnOrNrafcn]参照
-     * */
-    @OptIn(ExperimentalCoroutinesApi::class)
-    fun listenBand(context: Context) = callbackFlow {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-                super.onCapabilitiesChanged(network, networkCapabilities)
-                launch { trySend(BandTool.getBandDataFromEarfcnOrNrafcn(context)) }
-            }
-        }
-        connectivityManager.registerDefaultNetworkCallback(callback)
-        awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
-    }
-
-    /**
-     * [BandTool.getBandDataFromEarfcnOrNrafcn]をコールバックで定期的に受け取る
+     * 定額制、従量制をコールバックで受け取れるらしいんだけど動いてなくね？
      *
      * @return 無制限プラン、もしくは家のWi-Fi等定額制ネットワークの場合はtrueを返す
      * */
@@ -48,12 +27,8 @@ object NetworkCallback {
             override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
                 super.onCapabilitiesChanged(network, networkCapabilities)
                 // 無制限プランを契約している場合はtrue
-                val isUnlimited = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) ||
-                            networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_TEMPORARILY_NOT_METERED)
-                } else {
-                    networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-                }
+                val isUnlimited = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) ||
+                        networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_TEMPORARILY_NOT_METERED)
                 trySend(isUnlimited)
             }
         }
@@ -62,63 +37,129 @@ object NetworkCallback {
     }
 
     /**
-     * 5G(New Radio / NR) 関係のコールバックを受け取る。多分Android 11以上じゃないと無理です
+     * 4G / アンカーバンド / 5G-Sub6 / 5G-ミリ波 をFlowで監視する関数
      *
-     * @return [NetworkType]を返す
+     * アンカーバンドではなく、本当に5G-Sub6に接続できた場合は[TelephonyCallback.CellInfoListener]で[CellInfoNr]が取得できます。
+     *
+     * が、アンテナピクトの隣が5Gでもアンカーバンドに接続している場合は[CellInfoLte]を返します。
+     *
+     * じゃあアンテナピクトの隣の状態はどこで拾えるのかって話ですが、[TelephonyCallback.DisplayInfoListener]で取れます。
+     *
+     * 他にもLTEのキャリアアグリゲーションとか取れるやつです。これとさっきの[CellInfo]を見比べて同じじゃない場合はアンカーバンドであるということがわかります。
+     *
+     * ミリ波かSub6かどうかは、NRARFCNの値を比較することで判断できます。[BandDictionary.isMmWave]参照
+     *
+     * [BandData]と[NetworkType]の[Pair]をFlowで流します
+     *
+     * @param context [Context]
      * */
     @OptIn(ExperimentalCoroutinesApi::class)
     fun listenNetworkStatus(context: Context) = callbackFlow {
-        if (PermissionCheckTool.isGranted(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+
+        // 一時的に値を持っておく
+        var tempNetworkType: NetworkType? = null
+        var tempBandData: BandData? = null
+
+        /**
+         * [onCellInfoChanged]・[onDisplayInfoChanged]どっちかが更新されたら呼ぶ
+         *
+         * Flowに値を返します
+         * */
+        fun sendResult() {
+            if (tempBandData == null) {
+                trySend(tempBandData to FinalNRType.ERROR)
+                return
+            }
+            val isMmWave = BandDictionary.isMmWave(tempBandData!!.earfcn)
+            val result = when {
+                // Sub6かアンカーバンド接続中 かつ 5Gではない なら 4G 判定
+                tempNetworkType == NetworkType.NR_SUB6 && !tempBandData!!.isNR -> FinalNRType.ANCHOR_BAND
+                // Sub6かアンカーバンド接続中 かつ 5G なら Sub6判定
+                tempBandData!!.isNR && (!isMmWave || tempNetworkType == NetworkType.NR_SUB6) -> FinalNRType.NR_SUB6
+                // ミリ波はスタンドアロンなのでEN-DCの影響を受けない
+                tempBandData!!.isNR && (isMmWave || tempNetworkType == NetworkType.NR_MMW) -> FinalNRType.NR_MMW
+                // そもそも4G
+                else -> FinalNRType.LTE
+            }
+            trySend(tempBandData!! to result)
+        }
+
+        if (PermissionCheckTool.isGranted(context)) {
             val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
-            /** Flowへ値を流す */
-            fun parse(telephonyDisplayInfo: TelephonyDisplayInfo) {
-                when (telephonyDisplayInfo.overrideNetworkType) {
-                    TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO -> trySend(NetworkType.LTE_ADVANCED)
-                    TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_LTE_CA -> trySend(NetworkType.LTE_CA)
-                    TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA -> trySend(NetworkType.NR_SUB6)
-                    TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_ADVANCED -> trySend(NetworkType.NR_MMW)
-                    else -> trySend(NetworkType.NONE)
-                }
-            }
-
+            // Android 12より書き方が変わった
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val callback = object : TelephonyCallback(), TelephonyCallback.DisplayInfoListener {
+                val callback = object : TelephonyCallback(), TelephonyCallback.DisplayInfoListener, TelephonyCallback.CellInfoListener {
+                    /** 実際の状態 */
+                    override fun onCellInfoChanged(cellInfo: MutableList<CellInfo>) {
+                        tempBandData = convertBandData(cellInfo[0])
+                        sendResult()
+                    }
+
+                    /** アンテナピクトと同じやつ */
                     override fun onDisplayInfoChanged(telephonyDisplayInfo: TelephonyDisplayInfo) {
-                        parse(telephonyDisplayInfo)
+                        tempNetworkType = convertNetworkType(telephonyDisplayInfo)
+                        sendResult()
                     }
                 }
                 telephonyManager.registerTelephonyCallback(context.mainExecutor, callback)
                 awaitClose { telephonyManager.unregisterTelephonyCallback(callback) }
             } else {
                 val callback = object : PhoneStateListener() {
-                    // パーミッションチェック入れてるので黙らせる
-                    @SuppressLint("MissingPermission", "NewApi")
+
+                    @SuppressLint("MissingPermission")
+                    override fun onCellInfoChanged(cellInfo: MutableList<CellInfo>?) {
+                        super.onCellInfoChanged(cellInfo)
+                        tempBandData = cellInfo?.get(0)?.let { convertBandData(it) }
+                        sendResult()
+                    }
+
+                    @SuppressLint("MissingPermission")
                     override fun onDisplayInfoChanged(telephonyDisplayInfo: TelephonyDisplayInfo) {
                         super.onDisplayInfoChanged(telephonyDisplayInfo)
-                        parse(telephonyDisplayInfo)
+                        tempNetworkType = convertNetworkType(telephonyDisplayInfo)
+                        sendResult()
                     }
                 }
-                telephonyManager.listen(callback, PhoneStateListener.LISTEN_DISPLAY_INFO_CHANGED)
+                telephonyManager.listen(callback, PhoneStateListener.LISTEN_DISPLAY_INFO_CHANGED or PhoneStateListener.LISTEN_CELL_INFO)
                 awaitClose { telephonyManager.listen(callback, PhoneStateListener.LISTEN_NONE) }
             }
         }
     }
-
-    /** 両方の結果から最終的な答え[FinalNRType]を出す */
-    fun finalResult(bandData: BandData, networkType: NetworkType): FinalNRType {
-        return when {
-            // Sub6かアンカーLTEバンド接続中 かつ 5Gではない なら 4G 判定
-            networkType == NetworkType.NR_SUB6 && !bandData.isNR -> FinalNRType.ANCHOR_LTE_BAND
-            // Sub6かアンカーLTEバンド接続中 かつ 5G なら Sub6判定
-            networkType == NetworkType.NR_SUB6 && bandData.isNR -> FinalNRType.NR_SUB6
-            // ミリ波はスタンドアロンなのでEN-DCの影響を受けない
-            networkType == NetworkType.NR_MMW -> FinalNRType.NR_MMW
-            // そもそも4G
-            else -> FinalNRType.LTE
+    
+    /**
+     * [CellInfo]を簡略化した[BandData]に変換する
+     *
+     * @param cellInfo [TelephonyCallback.CellInfoListener]で取れるやつ
+     * @return [BandData]。LTE/NR 以外はnullになります
+     * */
+    private fun convertBandData(cellInfo: CellInfo) = when (cellInfo) {
+        // LTE
+        is CellInfoLte -> {
+            val earfcn = cellInfo.cellIdentity.earfcn
+            BandData(false, BandDictionary.toLTEBand(earfcn), earfcn, cellInfo.cellIdentity.operatorAlphaShort.toString())
         }
+        // 5G (NR)
+        is CellInfoNr -> {
+            val nrarfcn = (cellInfo.cellIdentity as CellIdentityNr).nrarfcn
+            BandData(true, BandDictionary.toNRBand(nrarfcn), nrarfcn, cellInfo.cellIdentity.operatorAlphaShort.toString())
+        }
+        else -> null
     }
 
+    /**
+     * [TelephonyDisplayInfo]から簡略化した[NetworkType]を返す
+     *
+     * @param telephonyDisplayInfo [TelephonyCallback.DisplayInfoListener]で取れるやつ
+     * @return [NetworkType]。LTE/NR 以外は [NetworkType.NONE]
+     * */
+    fun convertNetworkType(telephonyDisplayInfo: TelephonyDisplayInfo) = when (telephonyDisplayInfo.overrideNetworkType) {
+        TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_LTE_ADVANCED_PRO -> NetworkType.LTE_ADVANCED
+        TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_LTE_CA -> NetworkType.LTE_CA
+        TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA -> NetworkType.NR_SUB6
+        TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_ADVANCED -> NetworkType.NR_MMW
+        else -> NetworkType.NONE
+    }
 }
 
 /** 最終的な値を取得するには[NetworkCallback.finalResult]を利用してね */
@@ -132,17 +173,17 @@ enum class NetworkType {
     /** キャリアアグリゲーションが有効 */
     LTE_CA,
 
-    /** 5GのSub6ネットワークか、アンカーLTEバンド圏内の場合 */
+    /** 5GのSub6ネットワークか、アンカーバンド圏内の場合 */
     NR_SUB6,
 
     /** ミリ波 ネットワーク もしくは キャリアアグリゲーション（CA）等より速い手段が提供されている場合 */
     NR_MMW,
 }
 
-
+/** 4G / EN-DC / 5G Sub6 / 5G mmWave */
 enum class FinalNRType {
-    /** ピクト表示では5Gだが、実はアンカーLTEバンドの圏内であり、5G接続は利用できないことを示す */
-    ANCHOR_LTE_BAND,
+    /** ピクト表示では5Gだが、実はアンカーバンドの圏内であり、5G接続は利用できないことを示す */
+    ANCHOR_BAND,
 
     /** 実際に5GのSub6ネットワークに接続している */
     NR_SUB6,
@@ -150,6 +191,9 @@ enum class FinalNRType {
     /** 実際に5Gのミリ波ネットワークに接続している */
     NR_MMW,
 
-    /** そもそも4GだしアンカーLTEバンドの圏内にすらいない */
+    /** そもそも4Gだしアンカーバンドの圏内にすらいない */
     LTE,
+
+    /** エラー。準備中など */
+    ERROR
 }

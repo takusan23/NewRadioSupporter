@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NewRadioSupporter</string>
+    <string name="request_permission">権限が必要なので許可して下さい。 位置情報、発信の権限は端末の電波状態へアクセスする目的に利用します。</string>
+    <string name="request_permission_button">権限を付与</string>
+    <string name="setting">設定</string>
+    <string name="license">ライセンス</string>
+    <string name="open_sourcecode">ソースコードを見る</string>
+    <string name="open_sourcecode_description">GitHubで開きます</string>
+    <string name="service_state_button">サービスの起動・終了</string>
+    <string name="background_service_description">バックグラウンドで5Gネットワークを監視する</string>
+    <string name="type_lte_anchor_band">アンカーバンドの圏内です。表示上では5Gですが、5Gの接続は確立していません。</string>
+    <string name="type_nr_sub6">5GのSub6ネットワークに接続中です。</string>
+    <string name="type_nr_mmwave">5Gのミリ波ネットワークに接続中です。</string>
+    <string name="type_lte">4Gに接続中です。</string>
+    <string name="loading">準備中です。</string>
+    <string name="connect_nr">5Gに接続中です。</string>
+    <string name="connect_lte">4Gに接続中です。</string>
+    <string name="connecting_band">接続中バンド</string>
+    <string name="carrier_name">キャリア名</string>
+    <string name="earfcn">NRARFCN(EARFCN)</string>
+    <string name="band_info">バンド情報</string>
+</resources>

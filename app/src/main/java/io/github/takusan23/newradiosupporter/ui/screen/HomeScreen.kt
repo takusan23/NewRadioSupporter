@@ -7,7 +7,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -29,18 +30,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
 
     // Flowで収集する
     val isUnlimitedNetwork = NetworkCallback.listenUnlimitedNetwork(context).collectAsState(initial = null)
-    val bandData = NetworkCallback.listenBand(context).collectAsState(initial = null)
-    val networkType = NetworkCallback.listenNetworkStatus(context).collectAsState(initial = null)
-
-    val isRunningService = remember { mutableStateOf(BackgroundNRSupporter.isServiceRunning(context)) }
-    // サービス起動
-    LaunchedEffect(key1 = isRunningService.value, block = {
-        if (isRunningService.value) {
-            BackgroundNRSupporter.startService(context)
-        } else {
-            BackgroundNRSupporter.stopService(context)
-        }
-    })
+    val networkTypeFlow = NetworkCallback.listenNetworkStatus(context).collectAsState(initial = null)
 
     Scaffold(
         topBar = {
@@ -54,18 +44,18 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 content = {
                     item {
-                        if (bandData.value != null && networkType.value != null) {
+                        if (networkTypeFlow.value?.second != null) {
                             TopInfo(
                                 modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                finalNRType = NetworkCallback.finalResult(bandData.value!!, networkType.value!!)
+                                finalNRType = networkTypeFlow.value?.second!!
                             )
                         }
                     }
                     item {
-                        if (bandData.value != null) {
+                        if (networkTypeFlow.value?.first != null) {
                             BandItem(
                                 modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                bandData = bandData.value!!
+                                bandData = networkTypeFlow.value?.first!!
                             )
                         }
                     }
@@ -80,8 +70,13 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                     item {
                         BackgroundServiceItem(
                             modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                            isRunning = isRunningService.value,
-                            onChecked = { isRunningService.value = it }
+                            onClick = {
+                                if (BackgroundNRSupporter.isServiceRunning(context)) {
+                                    BackgroundNRSupporter.stopService(context)
+                                } else {
+                                    BackgroundNRSupporter.startService(context)
+                                }
+                            }
                         )
                     }
                 }

@@ -8,8 +8,10 @@ import androidx.compose.material.Divider
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.ui.component.BackIcon
 
 /**
@@ -28,7 +30,7 @@ fun LicenseScreen(onBack: () -> Unit) {
         topBar = {
             SmallTopAppBar(
                 navigationIcon = { BackIcon(onClick = onBack) },
-                title = { Text(text = "ライセンス") }
+                title = { Text(text = stringResource(id = R.string.license)) }
             )
         },
         content = {

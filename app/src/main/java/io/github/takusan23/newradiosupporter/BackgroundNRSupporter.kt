@@ -12,9 +12,10 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import io.github.takusan23.newradiosupporter.tool.FinalNRType
 import io.github.takusan23.newradiosupporter.tool.NetworkCallback
+import io.github.takusan23.newradiosupporter.tool.data.BandData
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 
 /**
  * バックグラウンド5G監視サービス
@@ -36,22 +37,17 @@ class BackgroundNRSupporter : Service() {
     override fun onCreate() {
         super.onCreate()
         // とりあえず殺される前に通知出す
-        showNotification(null)
+        showNotification(null, null)
         // ブロードキャスト登録
         registerReceiver(broadcastReceiver, IntentFilter().apply {
             addAction(STOP_SERVICE_BROADCAST)
         })
         // Flowで収集する
-        scope.launch {
-            // Flowを結合する
-            val bandInfoFlow = NetworkCallback.listenBand(this@BackgroundNRSupporter)
-            val networkType = NetworkCallback.listenNetworkStatus(this@BackgroundNRSupporter)
-            bandInfoFlow.combine(networkType) { bandInfo, type ->
-                if (bandInfo != null) {
-                    NetworkCallback.finalResult(bandInfo, type)
-                } else FinalNRType.LTE
-            }.collect { finalType -> showNotification(finalType) }
-        }
+        val collectNetworkType = NetworkCallback.listenNetworkStatus(this@BackgroundNRSupporter)
+        // Flowを結合する
+        collectNetworkType.onEach { (band, type) ->
+            showNotification(band, type)
+        }.launchIn(scope)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -64,33 +60,37 @@ class BackgroundNRSupporter : Service() {
         unregisterReceiver(broadcastReceiver)
     }
 
-    private fun showNotification(finalNRType: FinalNRType? = null) {
+    private fun showNotification(bandData: BandData?, finalNRType: FinalNRType?) {
         val channelId = "io.github.takusan23.newradiosupporter.NR_SERVICE_NOTIFICATION"
         val channel = NotificationChannelCompat.Builder(channelId, NotificationManagerCompat.IMPORTANCE_LOW).apply {
-            setName("バックグラウンド5Gサポーター")
+            setName("バックグラウンド5G通知")
         }.build()
         if (notificationManagerCompat.getNotificationChannel(channelId) == null) {
             notificationManagerCompat.createNotificationChannel(channel)
         }
         val notification = NotificationCompat.Builder(this, channelId).apply {
             setContentTitle(when (finalNRType) {
-                FinalNRType.NR_SUB6, FinalNRType.NR_MMW -> "5Gに接続中です"
-                FinalNRType.ANCHOR_LTE_BAND, FinalNRType.LTE -> "4Gに接続中です"
-                null -> "準備中です"
+                FinalNRType.NR_SUB6, FinalNRType.NR_MMW -> getString(R.string.connect_nr)
+                FinalNRType.ANCHOR_BAND, FinalNRType.LTE -> getString(R.string.connect_lte)
+                else -> getString(R.string.loading)
             })
-            setContentText(when (finalNRType) {
-                FinalNRType.ANCHOR_LTE_BAND -> "アンカーLTEバンドの圏内です。表示上では5Gですが、5Gの接続は確立していません。"
-                FinalNRType.NR_SUB6 -> "5GのSub6ネットワークに接続中です。"
-                FinalNRType.NR_MMW -> "5Gのミリ波ネットワークに接続中です。"
-                FinalNRType.LTE -> "4Gに接続中です。"
-                null -> "準備中です"
-            })
+            val networkType = when (finalNRType) {
+                FinalNRType.ANCHOR_BAND -> getString(R.string.type_lte_anchor_band)
+                FinalNRType.NR_SUB6 -> getString(R.string.type_nr_sub6)
+                FinalNRType.NR_MMW -> getString(R.string.type_nr_mmwave)
+                FinalNRType.LTE -> getString(R.string.type_lte)
+                else -> getString(R.string.loading)
+            }
+            val bandText = if (bandData != null) {
+                "${getString(R.string.connecting_band)}：${bandData.band} (${bandData.earfcn})"
+            } else getString(R.string.loading)
+            setContentText("$networkType\n$bandText")
             setSmallIcon(when (finalNRType) {
-                FinalNRType.ANCHOR_LTE_BAND -> R.drawable.ic_android_anchor_lte_band
+                FinalNRType.ANCHOR_BAND -> R.drawable.ic_android_anchor_lte_band
                 FinalNRType.NR_SUB6 -> R.drawable.ic_android_nr_sub6
                 FinalNRType.NR_MMW -> R.drawable.ic_android_nr_mmw
                 FinalNRType.LTE -> R.drawable.ic_android_lte
-                null -> R.drawable.ic_outline_error_outline_24
+                else -> R.drawable.ic_outline_error_outline_24
             })
             // 通知押したとき
             setContentIntent(PendingIntent.getActivity(this@BackgroundNRSupporter, 1, Intent(this@BackgroundNRSupporter, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE))

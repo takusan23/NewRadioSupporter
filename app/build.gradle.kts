@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "io.github.takusan23.newradiosupporter"
-        minSdk = 29
+        minSdk = 30
         targetSdk = 31
         versionCode = 1
         versionName = "1.0.0"

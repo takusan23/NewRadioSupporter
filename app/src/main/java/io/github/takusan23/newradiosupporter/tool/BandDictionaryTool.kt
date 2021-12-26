@@ -1,7 +1,7 @@
 package io.github.takusan23.newradiosupporter.tool
 
 /**
- * EARFCN(LTE)と、ARFCN(5G/NR)からバンドを出す
+ * EARFCN(LTE)と、NRARFCN(5G/NR)からバンドを出す
  *
  * LTE band EARFCN table 等で検索検索
  * */
@@ -109,10 +109,12 @@ object BandDictionary {
         }?.bandNum.toString()
     }
 
-    /** バンド番号からdlMinとdlMaxが取れるように */
-    fun getNRBand(bandNum: Int): BandDictionaryData {
-        return bandNRList.find { it.bandNum == bandNum }!!
-    }
+    /**
+     * NRARFCNがミリ波かどうか
+     *
+     * @return ミリ波ならtrue
+     * */
+    fun isMmWave(nrarfcn: Int) = nrarfcn >= bandNRList.find { it.bandNum == 257 }!!.dlMin
 
 }
 

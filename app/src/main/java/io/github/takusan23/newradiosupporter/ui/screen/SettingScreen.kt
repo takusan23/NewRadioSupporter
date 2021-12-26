@@ -9,7 +9,9 @@ import androidx.compose.material3.SmallTopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
+import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.ui.component.BackIcon
 import io.github.takusan23.newradiosupporter.ui.component.LicenseSettingNavItem
 import io.github.takusan23.newradiosupporter.ui.component.OpenSourceCodeSettingNevItem
@@ -32,7 +34,7 @@ fun SettingScreen(
         topBar = {
             SmallTopAppBar(
                 navigationIcon = { BackIcon(onClick = onBack) },
-                title = { Text(text = "設定") }
+                title = { Text(text = stringResource(id = R.string.setting)) }
             )
         },
         content = {
