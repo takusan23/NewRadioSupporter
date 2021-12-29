@@ -61,7 +61,7 @@ object NetworkCallback {
         var tempBandData: BandData? = null
 
         /**
-         * [onCellInfoChanged]・[onDisplayInfoChanged]どっちかが更新されたら呼ぶ
+         * [TelephonyCallback.CellInfoListener]・[TelephonyCallback.DisplayInfoListener]どっちかが更新されたら呼ぶ
          *
          * Flowに値を返します
          * */
@@ -75,9 +75,9 @@ object NetworkCallback {
                 // Sub6かアンカーバンド接続中 かつ 5Gではない なら 4G 判定
                 tempNetworkType == NetworkType.NR_SUB6 && !tempBandData!!.isNR -> FinalNRType.ANCHOR_BAND
                 // Sub6かアンカーバンド接続中 かつ 5G なら Sub6判定
-                tempBandData!!.isNR && (!isMmWave || tempNetworkType == NetworkType.NR_SUB6) -> FinalNRType.NR_SUB6
+                tempBandData!!.isNR && !isMmWave -> FinalNRType.NR_SUB6
                 // ミリ波はスタンドアロンなのでEN-DCの影響を受けない
-                tempBandData!!.isNR && (isMmWave || tempNetworkType == NetworkType.NR_MMW) -> FinalNRType.NR_MMW
+                tempBandData!!.isNR && isMmWave -> FinalNRType.NR_MMW
                 // そもそも4G
                 else -> FinalNRType.LTE
             }
@@ -126,7 +126,7 @@ object NetworkCallback {
             }
         }
     }
-    
+
     /**
      * [CellInfo]を簡略化した[BandData]に変換する
      *
@@ -162,7 +162,7 @@ object NetworkCallback {
     }
 }
 
-/** 最終的な値を取得するには[NetworkCallback.finalResult]を利用してね */
+/** ネットワークの種類 */
 enum class NetworkType {
     /** 特になし。getNetworkType()を利用してね */
     NONE,
