@@ -1,6 +1,7 @@
 package io.github.takusan23.newradiosupporter.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,47 +41,50 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             )
         },
         content = {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                content = {
-                    item {
-                        if (networkTypeFlow.value?.second != null) {
-                            TopInfo(
-                                modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                finalNRType = networkTypeFlow.value?.second!!
-                            )
-                        }
-                    }
-                    item {
-                        if (networkTypeFlow.value?.first != null) {
-                            BandItem(
-                                modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                bandData = networkTypeFlow.value?.first!!
-                            )
-                        }
-                    }
-                    item {
-                        if (isUnlimitedNetwork.value != null) {
-                            UnlimitedInfo(
-                                modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                isUnlimited = isUnlimitedNetwork.value!!
-                            )
-                        }
-                    }
-                    item {
-                        BackgroundServiceItem(
-                            modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                            onClick = {
-                                if (BackgroundNRSupporter.isServiceRunning(context)) {
-                                    BackgroundNRSupporter.stopService(context)
-                                } else {
-                                    BackgroundNRSupporter.startService(context)
-                                }
+            Box(modifier = Modifier.padding(it)) {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    content = {
+                        item {
+                            if (networkTypeFlow.value?.second != null) {
+                                TopInfo(
+                                    modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                                    finalNRType = networkTypeFlow.value?.second!!,
+                                    nrStandAloneType = networkTypeFlow.value?.third
+                                )
                             }
-                        )
+                        }
+                        item {
+                            if (networkTypeFlow.value?.first != null) {
+                                BandItem(
+                                    modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                                    bandData = networkTypeFlow.value?.first!!
+                                )
+                            }
+                        }
+                        item {
+                            if (isUnlimitedNetwork.value != null) {
+                                UnlimitedInfo(
+                                    modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                                    isUnlimited = isUnlimitedNetwork.value!!
+                                )
+                            }
+                        }
+                        item {
+                            BackgroundServiceItem(
+                                modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                                onClick = {
+                                    if (BackgroundNRSupporter.isServiceRunning(context)) {
+                                        BackgroundNRSupporter.stopService(context)
+                                    } else {
+                                        BackgroundNRSupporter.startService(context)
+                                    }
+                                }
+                            )
+                        }
                     }
-                }
-            )
+                )
+            }
         }
     )
 }

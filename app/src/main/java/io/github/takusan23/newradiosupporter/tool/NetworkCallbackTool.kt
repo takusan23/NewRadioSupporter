@@ -8,7 +8,6 @@ import android.net.NetworkCapabilities
 import android.os.Build
 import android.telephony.*
 import io.github.takusan23.newradiosupporter.tool.data.BandData
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 
@@ -20,7 +19,6 @@ object NetworkCallback {
      *
      * @return 無制限プラン、もしくは家のWi-Fi等定額制ネットワークの場合はtrueを返す
      * */
-    @OptIn(ExperimentalCoroutinesApi::class)
     fun listenUnlimitedNetwork(context: Context) = callbackFlow {
         val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val callback = object : ConnectivityManager.NetworkCallback() {
@@ -52,13 +50,14 @@ object NetworkCallback {
      * [BandData]と[NetworkType]の[Pair]をFlowで流します
      *
      * @param context [Context]
+     * @return 接続中バンド情報、5Gの種類、5Gの方式 を返す
      * */
-    @OptIn(ExperimentalCoroutinesApi::class)
     fun listenNetworkStatus(context: Context) = callbackFlow {
 
         // 一時的に値を持っておく
         var tempNetworkType: NetworkType? = null
         var tempBandData: BandData? = null
+        var nrStandAloneType: NrStandAloneType? = null
 
         /**
          * [TelephonyCallback.CellInfoListener]・[TelephonyCallback.DisplayInfoListener]どっちかが更新されたら呼ぶ
@@ -67,7 +66,7 @@ object NetworkCallback {
          * */
         fun sendResult() {
             if (tempBandData == null) {
-                trySend(tempBandData to FinalNRType.ERROR)
+                trySend(Triple(tempBandData, FinalNRType.ERROR, NrStandAloneType.ERROR))
                 return
             }
             val isMmWave = BandDictionary.isMmWave(tempBandData!!.earfcn)
@@ -81,7 +80,7 @@ object NetworkCallback {
                 // そもそも4G
                 else -> FinalNRType.LTE
             }
-            trySend(tempBandData!! to result)
+            trySend(Triple(tempBandData, result, nrStandAloneType))
         }
 
         if (PermissionCheckTool.isGranted(context)) {
@@ -97,8 +96,10 @@ object NetworkCallback {
                     }
 
                     /** アンテナピクトと同じやつ */
+                    @SuppressLint("MissingPermission")
                     override fun onDisplayInfoChanged(telephonyDisplayInfo: TelephonyDisplayInfo) {
                         tempNetworkType = convertNetworkType(telephonyDisplayInfo)
+                        nrStandAloneType = convertStandAloneType(telephonyDisplayInfo, telephonyManager.dataNetworkType)
                         sendResult()
                     }
                 }
@@ -118,6 +119,7 @@ object NetworkCallback {
                     override fun onDisplayInfoChanged(telephonyDisplayInfo: TelephonyDisplayInfo) {
                         super.onDisplayInfoChanged(telephonyDisplayInfo)
                         tempNetworkType = convertNetworkType(telephonyDisplayInfo)
+                        nrStandAloneType = convertStandAloneType(telephonyDisplayInfo, telephonyManager.dataNetworkType)
                         sendResult()
                     }
                 }
@@ -160,6 +162,26 @@ object NetworkCallback {
         TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_ADVANCED -> NetworkType.NR_MMW
         else -> NetworkType.NONE
     }
+
+    /**
+     * [TelephonyDisplayInfo]と[TelephonyManager.getDataNetworkType]を見て5Gが NSA/SA のどっちで接続されているか判別する
+     * [判別方法はこちら](https://source.android.com/docs/core/connect/acts-5g-testing)
+     *
+     * @param telephonyDisplayInfo [TelephonyCallback.DisplayInfoListener]で取れるやつ
+     * @param networkType [TelephonyManager.getDataNetworkType]の値
+     * @return [NrStandAloneType]。5G 以外は [NrStandAloneType.ERROR]
+     */
+    fun convertStandAloneType(telephonyDisplayInfo: TelephonyDisplayInfo, networkType: Int) = when {
+        // 5G スタンドアローン
+        telephonyDisplayInfo.networkType == TelephonyManager.NETWORK_TYPE_NR
+                && networkType == TelephonyManager.NETWORK_TYPE_NR -> NrStandAloneType.STAND_ALONE
+        // 5G ノンスタンドアローン
+        telephonyDisplayInfo.networkType == TelephonyManager.NETWORK_TYPE_NR
+                && telephonyDisplayInfo.overrideNetworkType == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA
+                && networkType == TelephonyManager.NETWORK_TYPE_NR -> NrStandAloneType.STAND_ALONE
+        // 5Gじゃない
+        else -> NrStandAloneType.ERROR
+    }
 }
 
 /** ネットワークの種類 */
@@ -195,5 +217,20 @@ enum class FinalNRType {
     LTE,
 
     /** エラー。準備中など */
+    ERROR
+}
+
+/**
+ * 5Gのネットワーク方式、動作未確認
+ * Non StandAlone / StandAlone / 5G以外
+ */
+enum class NrStandAloneType {
+    /** 5G スタンドアローン形式 */
+    STAND_ALONE,
+
+    /** 5G ノンスタンドアローン形式 */
+    NON_STAND_ALONE,
+
+    /** 5G じゃない */
     ERROR
 }

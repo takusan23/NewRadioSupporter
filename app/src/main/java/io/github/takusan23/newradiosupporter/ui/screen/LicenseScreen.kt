@@ -1,5 +1,6 @@
 package io.github.takusan23.newradiosupporter.ui.screen
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,11 +35,13 @@ fun LicenseScreen(onBack: () -> Unit) {
             )
         },
         content = {
-            LazyColumn(content = {
-                items(list) { data ->
-                    LicenseItem(licenseData = data)
-                }
-            })
+            Box(modifier = Modifier.padding(it)) {
+                LazyColumn(content = {
+                    items(list) { data ->
+                        LicenseItem(licenseData = data)
+                    }
+                })
+            }
         }
     )
 }

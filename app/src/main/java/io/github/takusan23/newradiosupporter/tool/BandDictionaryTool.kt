@@ -74,8 +74,10 @@ object BandDictionary {
         BandDictionaryData(74, 295000, 303600),
         BandDictionaryData(75, 286400, 303400),
         BandDictionaryData(76, 285400, 286400),
-        BandDictionaryData(77, 620000, 680000),
+        // n77 の周波数の中に n78 が存在しているため、先に n78 が一致するか確認してから n77 の判定を行う
+        // n77 に対応していれば n78 にも対応していることになる
         BandDictionaryData(78, 620000, 653333),
+        BandDictionaryData(77, 620000, 680000),
         BandDictionaryData(79, 693334, 733333),
         // 5G ミリ波
         BandDictionaryData(257, 2054167, 2104166),

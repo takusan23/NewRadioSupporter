@@ -13,7 +13,9 @@ import androidx.core.app.NotificationManagerCompat
 import io.github.takusan23.newradiosupporter.tool.FinalNRType
 import io.github.takusan23.newradiosupporter.tool.NetworkCallback
 import io.github.takusan23.newradiosupporter.tool.data.BandData
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
@@ -24,7 +26,6 @@ class BackgroundNRSupporter : Service() {
 
     private val notificationManagerCompat by lazy { NotificationManagerCompat.from(this) }
     private val scope = CoroutineScope(Dispatchers.Main)
-    private val STOP_SERVICE_BROADCAST = "io.github.takusan23.newradiosupporter.BROADCAST_SERVICE_STOP"
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             stopSelf()
@@ -33,7 +34,6 @@ class BackgroundNRSupporter : Service() {
 
     override fun onBind(intent: Intent) = null
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
         // とりあえず殺される前に通知出す
@@ -101,6 +101,8 @@ class BackgroundNRSupporter : Service() {
     }
 
     companion object {
+
+        private const val STOP_SERVICE_BROADCAST = "io.github.takusan23.newradiosupporter.BROADCAST_SERVICE_STOP"
 
         const val NOTIFICATION_ID = 4545
 
