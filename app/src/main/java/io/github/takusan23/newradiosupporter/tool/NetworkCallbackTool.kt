@@ -47,7 +47,9 @@ object NetworkCallback {
      *
      * ミリ波かSub6かどうかは、NRARFCNの値を比較することで判断できます。[BandDictionary.isMmWave]参照
      *
-     * [BandData]と[NetworkType]の[Pair]をFlowで流します
+     * 5G接続時は、ノンスタンドアローンかスタンドアローンかどうかも返します。
+     *
+     * [BandData]と[NetworkType]と[NrStandAloneType]の[Triple]をFlowで流します
      *
      * @param context [Context]
      * @return 接続中バンド情報、5Gの種類、5Gの方式 を返す
@@ -60,7 +62,7 @@ object NetworkCallback {
         var nrStandAloneType: NrStandAloneType? = null
 
         /**
-         * [TelephonyCallback.CellInfoListener]・[TelephonyCallback.DisplayInfoListener]どっちかが更新されたら呼ぶ
+         * [TelephonyCallback.CellInfoListener] / [TelephonyCallback.DisplayInfoListener]どっちかが更新されたら呼ぶ
          *
          * Flowに値を返します
          * */
@@ -75,7 +77,7 @@ object NetworkCallback {
                 tempNetworkType == NetworkType.NR_SUB6 && !tempBandData!!.isNR -> FinalNRType.ANCHOR_BAND
                 // Sub6かアンカーバンド接続中 かつ 5G なら Sub6判定
                 tempBandData!!.isNR && !isMmWave -> FinalNRType.NR_SUB6
-                // ミリ波はスタンドアロンなのでEN-DCの影響を受けない
+                // ミリ波
                 tempBandData!!.isNR && isMmWave -> FinalNRType.NR_MMW
                 // そもそも4G
                 else -> FinalNRType.LTE
@@ -165,20 +167,25 @@ object NetworkCallback {
 
     /**
      * [TelephonyDisplayInfo]と[TelephonyManager.getDataNetworkType]を見て5Gが NSA/SA のどっちで接続されているか判別する
-     * [判別方法はこちら](https://source.android.com/docs/core/connect/acts-5g-testing)
      *
      * @param telephonyDisplayInfo [TelephonyCallback.DisplayInfoListener]で取れるやつ
-     * @param networkType [TelephonyManager.getDataNetworkType]の値
+     * @param dataNetworkType [TelephonyManager.getDataNetworkType]の値
      * @return [NrStandAloneType]。5G 以外は [NrStandAloneType.ERROR]
      */
-    fun convertStandAloneType(telephonyDisplayInfo: TelephonyDisplayInfo, networkType: Int) = when {
-        // 5G スタンドアローン
-        telephonyDisplayInfo.networkType == TelephonyManager.NETWORK_TYPE_NR
-                && networkType == TelephonyManager.NETWORK_TYPE_NR -> NrStandAloneType.STAND_ALONE
-        // 5G ノンスタンドアローン
-        telephonyDisplayInfo.networkType == TelephonyManager.NETWORK_TYPE_NR
-                && telephonyDisplayInfo.overrideNetworkType == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA
-                && networkType == TelephonyManager.NETWORK_TYPE_NR -> NrStandAloneType.STAND_ALONE
+    fun convertStandAloneType(telephonyDisplayInfo: TelephonyDisplayInfo, dataNetworkType: Int) = when {
+        /**
+         * 5G スタンドアローン形式 (SA)
+         * [TelephonyManager.getDataNetworkType]が[TelephonyManager.NETWORK_TYPE_NR]を返す
+         */
+        dataNetworkType == TelephonyManager.NETWORK_TYPE_NR -> NrStandAloneType.STAND_ALONE
+        /**
+         * 5G ノンスタンドアローン方式 (NSA)
+         * [TelephonyManager.getDataNetworkType]が[TelephonyManager.NETWORK_TYPE_LTE]を返し（なんと！）、
+         * [TelephonyDisplayInfo.getOverrideNetworkType]が NR を返す
+         */
+        dataNetworkType == TelephonyManager.NETWORK_TYPE_LTE &&
+                (telephonyDisplayInfo.overrideNetworkType == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_ADVANCED
+                        || telephonyDisplayInfo.overrideNetworkType == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA) -> NrStandAloneType.NON_STAND_ALONE
         // 5Gじゃない
         else -> NrStandAloneType.ERROR
     }

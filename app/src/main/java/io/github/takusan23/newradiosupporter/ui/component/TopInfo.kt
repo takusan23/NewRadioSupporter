@@ -48,7 +48,7 @@ fun TopInfo(
         // メッセージ
         ConnectedStatusMessage(finalNRType = finalNRType)
         // 5Gの場合は NSA/SA どっちかを表示する
-        if (nrStandAloneType != null && nrStandAloneType != NrStandAloneType.ERROR) {
+        if (nrStandAloneType != null && (finalNRType == FinalNRType.NR_SUB6 || finalNRType == FinalNRType.NR_MMW)) {
             ConnectedNrStandAloneMessage(nrStandAloneType)
         }
     }
@@ -57,14 +57,15 @@ fun TopInfo(
 /** もし5Gに接続している場合は、スタンドアローン、ノンスタンドアローンのどっちに接続しているかを表示する */
 @Composable
 private fun ConnectedNrStandAloneMessage(nrStandAloneType: NrStandAloneType) {
+    val (icon, strId) = when (nrStandAloneType) {
+        NrStandAloneType.STAND_ALONE -> R.drawable.android_5g_stand_alone to R.string.type_stand_alone_5g
+        NrStandAloneType.NON_STAND_ALONE -> R.drawable.android_5g_non_stand_alone to R.string.type_non_stand_alone_5g
+        NrStandAloneType.ERROR -> R.drawable.ic_outline_4g_mobiledata_24 to R.string.type_lte
+    }
     MessageCard(
         cardColor = MaterialTheme.colorScheme.secondaryContainer,
-        iconRes = R.drawable.ic_outline_5g_24,
-        text = when (nrStandAloneType) {
-            NrStandAloneType.STAND_ALONE -> "スタンドアローン方式 (SA) の5Gに接続中です。"
-            NrStandAloneType.NON_STAND_ALONE -> "ノンスタンドアローン方式 (NSA) の5Gに接続中です。"
-            NrStandAloneType.ERROR -> "" // 多分こない
-        }
+        iconRes = icon,
+        text = stringResource(id = strId)
     )
 }
 

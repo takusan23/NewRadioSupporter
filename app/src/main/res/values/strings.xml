@@ -19,4 +19,6 @@
     <string name="carrier_name">Carrier name</string>
     <string name="earfcn">NRARFCN(EARFCN)</string>
     <string name="band_info">Band information</string>
+    <string name="type_non_stand_alone_5g">You are connecting to non-standalone (NSA) 5G.</string>
+    <string name="type_stand_alone_5g">You are connecting to Standalone (SA) 5G.</string>
 </resources>
