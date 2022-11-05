@@ -38,7 +38,9 @@ fun PermissionScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = stringResource(id = R.string.request_permission))
+        Text(
+            text = stringResource(id = R.string.request_permission))
+
         Button(
             modifier = Modifier.padding(10.dp),
             onClick = { permissionRequest.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.READ_PHONE_STATE)) },
