@@ -80,7 +80,6 @@ fun NewRadioSupporterTheme(
         darkTheme -> DarkThemeColors
         else -> LightThemeColors
     }
-
     MaterialTheme(
         colorScheme = colors,
         content = content

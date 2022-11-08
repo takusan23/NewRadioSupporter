@@ -21,4 +21,7 @@
     <string name="band_info">Band information</string>
     <string name="type_non_stand_alone_5g">You are connecting to non-standalone (NSA) 5G.</string>
     <string name="type_stand_alone_5g">You are connecting to Standalone (SA) 5G.</string>
+    <string name="title_flat_fee">Connected to flat fee (unlimited) network.</string>
+    <string name="title_measured_rate">Connected to measured rate (limited) network.</string>
+    <string name="description_fee">Flat fee or measured rate.</string>
 </resources>

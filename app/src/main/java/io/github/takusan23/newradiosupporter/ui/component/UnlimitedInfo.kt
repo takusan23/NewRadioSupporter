@@ -4,6 +4,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import io.github.takusan23.newradiosupporter.R
 
 @Composable
@@ -14,8 +15,10 @@ fun UnlimitedInfo(
     Surface(modifier = modifier) {
         CommonItem(
             icon = painterResource(id = R.drawable.ic_outline_money_24),
-            title = if (isUnlimited) "定額制（無制限のデータ通信）ネットワークに接続中です" else "従量制（データ通信量に制限）ネットワークに接続中です",
-            description = "従量制か定額制か"
+            title = if (isUnlimited) stringResource(id = R.string.title_flat_fee) else stringResource(
+                id = R.string.title_measured_rate
+            ),
+            description = stringResource(id = R.string.description_fee)
         )
     }
 }
