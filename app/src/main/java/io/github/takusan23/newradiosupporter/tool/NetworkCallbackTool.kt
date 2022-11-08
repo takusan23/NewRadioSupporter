@@ -12,7 +12,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 
 /** ネットワーク関係のコールバック */
-object NetworkCallback {
+object NetworkCallbackTool {
 
     /**
      * 定額制、従量制をコールバックで受け取れるらしいんだけど動いてなくね？

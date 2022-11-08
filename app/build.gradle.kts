@@ -7,6 +7,7 @@ plugins {
 }
 
 android {
+    namespace = "io.github.takusan23.newradiosupporter"
     compileSdk = 33
 
     defaultConfig {
@@ -39,8 +40,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = composeVersion
-        kotlinCompilerVersion = kotlinVersion
+        kotlinCompilerExtensionVersion = "1.3.2"
     }
     packagingOptions {
         resources {

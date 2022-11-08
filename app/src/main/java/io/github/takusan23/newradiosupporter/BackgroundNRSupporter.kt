@@ -11,7 +11,7 @@ import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import io.github.takusan23.newradiosupporter.tool.FinalNRType
-import io.github.takusan23.newradiosupporter.tool.NetworkCallback
+import io.github.takusan23.newradiosupporter.tool.NetworkCallbackTool
 import io.github.takusan23.newradiosupporter.tool.data.BandData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,7 +43,7 @@ class BackgroundNRSupporter : Service() {
             addAction(STOP_SERVICE_BROADCAST)
         })
         // Flowで収集する
-        val collectNetworkType = NetworkCallback.listenNetworkStatus(this@BackgroundNRSupporter)
+        val collectNetworkType = NetworkCallbackTool.listenNetworkStatus(this@BackgroundNRSupporter)
         // Flowを結合する
         collectNetworkType.onEach { (band, type) ->
             showNotification(band, type)

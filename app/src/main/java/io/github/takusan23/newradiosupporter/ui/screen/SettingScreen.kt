@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallTopAppBar
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,20 +35,19 @@ fun SettingScreen(
 
     Scaffold(
         topBar = {
-            SmallTopAppBar(
-                navigationIcon = { BackIcon(onClick = onBack) },
-                title = { Text(text = stringResource(id = R.string.setting)) }
+            TopAppBar(
+                title = { Text(text = stringResource(id = R.string.setting)) },
+                navigationIcon = { BackIcon(onClick = onBack) }
             )
-        },
-        content = {
-            Box(modifier = Modifier.padding(it)) {
-                LazyColumn(content = {
-                    item { OpenSourceCodeSettingNevItem { openGitHub(context) } }
-                    item { LicenseSettingNavItem { onNavigate(NavigationLinkList.SettingLicenseScreen) } }
-                })
+        }
+    ) {
+        Box(modifier = Modifier.padding(it)) {
+            LazyColumn {
+                item { OpenSourceCodeSettingNevItem { openGitHub(context) } }
+                item { LicenseSettingNavItem { onNavigate(NavigationLinkList.SettingLicenseScreen) } }
             }
         }
-    )
+    }
 }
 
 /** GitHubを開く */

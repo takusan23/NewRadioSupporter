@@ -30,9 +30,9 @@ fun LicenseScreen(onBack: () -> Unit) {
     )
     Scaffold(
         topBar = {
-            SmallTopAppBar(
-                navigationIcon = { BackIcon(onClick = onBack) },
-                title = { Text(text = stringResource(id = R.string.license)) }
+            TopAppBar(
+                title = { Text(text = stringResource(id = R.string.license)) },
+                navigationIcon = { BackIcon(onClick = onBack) }
             )
         },
         content = {

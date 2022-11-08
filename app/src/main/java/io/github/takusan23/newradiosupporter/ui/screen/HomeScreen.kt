@@ -16,7 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.takusan23.newradiosupporter.BackgroundNRSupporter
 import io.github.takusan23.newradiosupporter.R
-import io.github.takusan23.newradiosupporter.tool.NetworkCallback
+import io.github.takusan23.newradiosupporter.tool.NetworkCallbackTool
 import io.github.takusan23.newradiosupporter.ui.component.*
 
 /**
@@ -30,8 +30,8 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
     val context = LocalContext.current
 
     // Flowで収集する
-    val isUnlimitedNetwork = NetworkCallback.listenUnlimitedNetwork(context).collectAsState(initial = null)
-    val networkTypeFlow = NetworkCallback.listenNetworkStatus(context).collectAsState(initial = null)
+    val isUnlimitedNetwork = NetworkCallbackTool.listenUnlimitedNetwork(context).collectAsState(initial = null)
+    val networkTypeFlow = NetworkCallbackTool.listenNetworkStatus(context).collectAsState(initial = null)
 
     Scaffold(
         topBar = {
@@ -39,52 +39,48 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                 title = { Text(text = stringResource(id = R.string.app_name)) },
                 actions = { AboutMenuIcon { onNavigate(NavigationLinkList.SettingScreen) } },
             )
-        },
-        content = {
-            Box(modifier = Modifier.padding(it)) {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    content = {
-                        item {
-                            if (networkTypeFlow.value?.second != null) {
-                                TopInfo(
-                                    modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                    finalNRType = networkTypeFlow.value?.second!!,
-                                    nrStandAloneType = networkTypeFlow.value?.third
-                                )
-                            }
-                        }
-                        item {
-                            if (networkTypeFlow.value?.first != null) {
-                                BandItem(
-                                    modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                    bandData = networkTypeFlow.value?.first!!
-                                )
-                            }
-                        }
-                        item {
-                            if (isUnlimitedNetwork.value != null) {
-                                UnlimitedInfo(
-                                    modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                    isUnlimited = isUnlimitedNetwork.value!!
-                                )
-                            }
-                        }
-                        item {
-                            BackgroundServiceItem(
-                                modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                onClick = {
-                                    if (BackgroundNRSupporter.isServiceRunning(context)) {
-                                        BackgroundNRSupporter.stopService(context)
-                                    } else {
-                                        BackgroundNRSupporter.startService(context)
-                                    }
-                                }
-                            )
-                        }
+        }
+    ) {
+        Box(modifier = Modifier.padding(it)) {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                item {
+                    if (networkTypeFlow.value?.second != null) {
+                        TopInfo(
+                            modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                            finalNRType = networkTypeFlow.value?.second!!,
+                            nrStandAloneType = networkTypeFlow.value?.third
+                        )
                     }
-                )
+                }
+                item {
+                    if (networkTypeFlow.value?.first != null) {
+                        BandItem(
+                            modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                            bandData = networkTypeFlow.value?.first!!
+                        )
+                    }
+                }
+                item {
+                    if (isUnlimitedNetwork.value != null) {
+                        UnlimitedInfo(
+                            modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                            isUnlimited = isUnlimitedNetwork.value!!
+                        )
+                    }
+                }
+                item {
+                    BackgroundServiceItem(
+                        modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                        onClick = {
+                            if (BackgroundNRSupporter.isServiceRunning(context)) {
+                                BackgroundNRSupporter.stopService(context)
+                            } else {
+                                BackgroundNRSupporter.startService(context)
+                            }
+                        }
+                    )
+                }
             }
         }
-    )
+    }
 }
