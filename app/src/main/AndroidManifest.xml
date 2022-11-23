@@ -9,17 +9,18 @@
 
     <application
         android:allowBackup="true"
+        android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
+        android:localeConfig="@xml/locales_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.NewRadioSupporter"
-        android:localeConfig="@xml/locales_config" >
+        android:theme="@style/Theme.NewRadioSupporter">
 
         <service
             android:name=".BackgroundNRSupporter"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="false" />
 
         <activity
             android:name=".MainActivity"

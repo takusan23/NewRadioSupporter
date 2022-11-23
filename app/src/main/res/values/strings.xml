@@ -24,4 +24,8 @@
     <string name="title_flat_fee">Connected to flat fee (unlimited) network.</string>
     <string name="title_measured_rate">Connected to measured rate (limited) network.</string>
     <string name="description_fee">Flat fee or measured rate.</string>
+    <string name="type_non_stand_alone_5g_short">NSA</string>
+    <string name="type_stand_alone_5g_short">SA</string>
+    <string name="type_4g_short">4G</string>
+    <string name="sim_network_overview_title">SIM</string>
 </resources>

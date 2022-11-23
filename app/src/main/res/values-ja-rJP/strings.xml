@@ -25,4 +25,8 @@
     <string name="title_flat_fee">定額制（無制限のデータ通信）ネットワークに接続中です。</string>
     <string name="title_measured_rate">従量制(データ通信量に制限）ネットワークに接続中です。</string>
     <string name="description_fee">従量制か定額制か</string>
+    <string name="type_non_stand_alone_5g_short">NSA</string>
+    <string name="type_stand_alone_5g_short">SA</string>
+    <string name="type_4g_short">4G</string>
+    <string name="sim_network_overview_title">SIM</string>
 </resources>

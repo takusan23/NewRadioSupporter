@@ -19,12 +19,12 @@ import io.github.takusan23.newradiosupporter.tool.FinalNRType
 import io.github.takusan23.newradiosupporter.tool.NrStandAloneType
 
 /**
- * 一番上に出す情報
+ * 回線状態を表示するやつ。展開時用
  *
  * @param nrStandAloneType 5G未接続時はnullでおｋ
  */
 @Composable
-fun TopInfo(
+fun SimNetWorkStatusExpanded(
     modifier: Modifier = Modifier,
     finalNRType: FinalNRType,
     nrStandAloneType: NrStandAloneType?,
@@ -34,6 +34,16 @@ fun TopInfo(
             .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.End
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_expand_less_24),
+                contentDescription = null
+            )
+        }
         Icon(
             modifier = Modifier.size(100.dp),
             painter = painterResource(id = when (finalNRType) {

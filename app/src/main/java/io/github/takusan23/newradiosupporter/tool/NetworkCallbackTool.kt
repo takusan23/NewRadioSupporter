@@ -8,6 +8,7 @@ import android.net.NetworkCapabilities
 import android.os.Build
 import android.telephony.*
 import io.github.takusan23.newradiosupporter.tool.data.BandData
+import io.github.takusan23.newradiosupporter.tool.data.NetworkStatusData
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 
@@ -52,14 +53,16 @@ object NetworkCallbackTool {
      * [BandData]と[NetworkType]と[NrStandAloneType]の[Triple]をFlowで流します
      *
      * @param context [Context]
+     * @param subscriptionId SIMカードを指定する場合は[SubscriptionInfo.getSubscriptionId]を入れる。詳細は[listenMultipleSimNetworkStatus]参照。省略時はデフォルト
      * @return 接続中バンド情報、5Gの種類、5Gの方式 を返す
      * */
-    fun listenNetworkStatus(context: Context) = callbackFlow {
+    fun listenNetworkStatus(context: Context, subscriptionId: Int = SubscriptionManager.DEFAULT_SUBSCRIPTION_ID) = callbackFlow {
 
         // 一時的に値を持っておく
         var tempNetworkType: NetworkType? = null
         var tempBandData: BandData? = null
         var nrStandAloneType: NrStandAloneType? = null
+        var simSlotIndex = 0
 
         /**
          * [TelephonyCallback.CellInfoListener] / [TelephonyCallback.DisplayInfoListener]どっちかが更新されたら呼ぶ
@@ -67,33 +70,43 @@ object NetworkCallbackTool {
          * Flowに値を返します
          * */
         fun sendResult() {
-            if (tempBandData == null) {
-                trySend(Triple(tempBandData, FinalNRType.ERROR, NrStandAloneType.ERROR))
+            val bandData = tempBandData
+            if (bandData == null) {
+                trySend(null)
                 return
             }
-            val isMmWave = BandDictionary.isMmWave(tempBandData!!.earfcn)
+            val isMmWave = BandDictionary.isMmWave(bandData.earfcn)
             val result = when {
                 // Sub6かアンカーバンド接続中 かつ 5Gではない なら 4G 判定
-                tempNetworkType == NetworkType.NR_SUB6 && !tempBandData!!.isNR -> FinalNRType.ANCHOR_BAND
+                tempNetworkType == NetworkType.NR_SUB6 && !bandData.isNR -> FinalNRType.ANCHOR_BAND
                 // Sub6かアンカーバンド接続中 かつ 5G なら Sub6判定
-                tempBandData!!.isNR && !isMmWave -> FinalNRType.NR_SUB6
+                bandData.isNR && !isMmWave -> FinalNRType.NR_SUB6
                 // ミリ波
-                tempBandData!!.isNR && isMmWave -> FinalNRType.NR_MMW
+                bandData.isNR && isMmWave -> FinalNRType.NR_MMW
                 // そもそも4G
                 else -> FinalNRType.LTE
             }
-            trySend(Triple(tempBandData, result, nrStandAloneType))
+            trySend(NetworkStatusData(simSlotIndex, bandData, result, nrStandAloneType ?: NrStandAloneType.ERROR))
         }
 
         if (PermissionCheckTool.isGranted(context)) {
-            val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
+            // SIMカードが選択されている場合は、そのSIMを指定した TelephonyManager を作成する
+            // ない場合はデフォルト
+            val telephonyManager = (context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
+                .createForSubscriptionId(subscriptionId)
+            val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+
+            // SIMスロット番号を取得する
+            @SuppressLint("MissingPermission")
+            simSlotIndex = subscriptionManager.getActiveSubscriptionInfo(subscriptionId).simSlotIndex
 
             // Android 12より書き方が変わった
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val callback = object : TelephonyCallback(), TelephonyCallback.DisplayInfoListener, TelephonyCallback.CellInfoListener {
                     /** 実際の状態 */
-                    override fun onCellInfoChanged(cellInfo: MutableList<CellInfo>) {
-                        tempBandData = convertBandData(cellInfo[0])
+                    override fun onCellInfoChanged(cellInfo: MutableList<CellInfo?>) {
+                        // 機内モードから復帰時などにすぐ開くとなんか落ちるので
+                        tempBandData = cellInfo.getOrNull(0)?.let { convertBandData(it) }
                         sendResult()
                     }
 
@@ -113,7 +126,7 @@ object NetworkCallbackTool {
                     @SuppressLint("MissingPermission")
                     override fun onCellInfoChanged(cellInfo: MutableList<CellInfo>?) {
                         super.onCellInfoChanged(cellInfo)
-                        tempBandData = cellInfo?.get(0)?.let { convertBandData(it) }
+                        tempBandData = cellInfo?.getOrNull(0)?.let { convertBandData(it) }
                         sendResult()
                     }
 
@@ -132,23 +145,46 @@ object NetworkCallbackTool {
     }
 
     /**
-     * [CellInfo]を簡略化した[BandData]に変換する
+     * [listenNetworkStatus]の複数SIM対応版。
+     * 多分コールバックを監視する必要があるので Flow です
      *
-     * @param cellInfo [TelephonyCallback.CellInfoListener]で取れるやつ
-     * @return [BandData]。LTE/NR 以外はnullになります
-     * */
-    private fun convertBandData(cellInfo: CellInfo) = when (cellInfo) {
-        // LTE
-        is CellInfoLte -> {
-            val earfcn = cellInfo.cellIdentity.earfcn
-            BandData(false, BandDictionary.toLTEBand(earfcn), earfcn, cellInfo.cellIdentity.operatorAlphaShort.toString())
+     * SIMの数だけ[listenNetworkStatus]のFlowを返します。SIMカードのスロット順にソートされているはずです。
+     */
+    @SuppressLint("MissingPermission")
+    fun listenMultipleSimNetworkStatus(context: Context) = callbackFlow {
+        val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+        if (PermissionCheckTool.isGranted(context)) {
+            // 多分 SubscriptionInfo が更新されたら呼び出される
+            val subscriptionInfoCallback = object : SubscriptionManager.OnSubscriptionsChangedListener() {
+                override fun onSubscriptionsChanged() {
+                    super.onSubscriptionsChanged()
+                    trySend(subscriptionManager.activeSubscriptionInfoList.map { listenNetworkStatus(context, it.subscriptionId) })
+                }
+            }
+            subscriptionManager.addOnSubscriptionsChangedListener(context.mainExecutor, subscriptionInfoCallback)
+            awaitClose { subscriptionManager.removeOnSubscriptionsChangedListener(subscriptionInfoCallback) }
+        } else {
+            trySend(emptyList())
+            awaitClose {
+                // do nothing
+            }
         }
-        // 5G (NR)
-        is CellInfoNr -> {
-            val nrarfcn = (cellInfo.cellIdentity as CellIdentityNr).nrarfcn
-            BandData(true, BandDictionary.toNRBand(nrarfcn), nrarfcn, cellInfo.cellIdentity.operatorAlphaShort.toString())
+    }
+
+    /**
+     * データ通信に設定されたSIMカードのスロット番号を取得する。
+     *
+     * @return データ通信に利用しているSIM。選択されていない場合は null を返す
+     */
+    @SuppressLint("MissingPermission")
+    fun getDataUsageSimSlotIndex(context: Context): Int? {
+        val dataUsageSubscriptionId = SubscriptionManager.getActiveDataSubscriptionId()
+        // 選択されていない場合
+        if (dataUsageSubscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+            return null
         }
-        else -> null
+        val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+        return subscriptionManager.getActiveSubscriptionInfo(dataUsageSubscriptionId).simSlotIndex
     }
 
     /**
@@ -188,6 +224,26 @@ object NetworkCallbackTool {
                         || telephonyDisplayInfo.overrideNetworkType == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA) -> NrStandAloneType.NON_STAND_ALONE
         // 5Gじゃない
         else -> NrStandAloneType.ERROR
+    }
+
+    /**
+     * [CellInfo]を簡略化した[BandData]に変換する
+     *
+     * @param cellInfo [TelephonyCallback.CellInfoListener]で取れるやつ
+     * @return [BandData]。LTE/NR 以外はnullになります
+     * */
+    private fun convertBandData(cellInfo: CellInfo) = when (cellInfo) {
+        // LTE
+        is CellInfoLte -> {
+            val earfcn = cellInfo.cellIdentity.earfcn
+            BandData(false, BandDictionary.toLTEBand(earfcn), earfcn, cellInfo.cellIdentity.operatorAlphaShort.toString())
+        }
+        // 5G (NR)
+        is CellInfoNr -> {
+            val nrarfcn = (cellInfo.cellIdentity as CellIdentityNr).nrarfcn
+            BandData(true, BandDictionary.toNRBand(nrarfcn), nrarfcn, cellInfo.cellIdentity.operatorAlphaShort.toString())
+        }
+        else -> null
     }
 }
 
