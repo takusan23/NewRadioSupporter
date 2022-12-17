@@ -87,9 +87,10 @@ private fun ConnectedStatusMessage(finalNRType: FinalNRType) {
         cardColor = animateColorAsState(targetValue = if (isNr) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer).value,
         iconRes = if (isNr) R.drawable.ic_outline_5g_24 else R.drawable.ic_outline_error_outline_24,
         text = when (finalNRType) {
-            FinalNRType.ANCHOR_BAND -> stringResource(id = R.string.type_lte_anchor_band)
-            FinalNRType.NR_SUB6 -> stringResource(id = R.string.type_nr_sub6)
             FinalNRType.NR_MMW -> stringResource(id = R.string.type_nr_mmwave)
+            FinalNRType.NR_SUB6 -> stringResource(id = R.string.type_nr_sub6)
+            FinalNRType.MAYBE_NR -> "もしかしたら5Gかもしれません。（バンド等は取得できませんでした）"
+            FinalNRType.ANCHOR_BAND -> stringResource(id = R.string.type_lte_anchor_band)
             FinalNRType.LTE -> stringResource(id = R.string.type_lte)
             else -> stringResource(id = R.string.loading)
         }

@@ -4,12 +4,14 @@ package io.github.takusan23.newradiosupporter.tool
  * EARFCN(LTE)と、NRARFCN(5G/NR)からバンドを出す
  *
  * LTE band EARFCN table 等で検索検索
- * */
+ */
 object BandDictionary {
 
     /**
      * バンドとEARFCN（最小値と最大値）の相対表。LTE（4G）版
-     * */
+     *
+     * 3GPP TS 36.104 参照
+     */
     private val bandLTEList = listOf(
         BandDictionaryData(1, 0, 599),
         BandDictionaryData(2, 600, 1199),
@@ -41,6 +43,19 @@ object BandDictionary {
         BandDictionaryData(30, 9770, 9869),
         BandDictionaryData(31, 9870, 9919),
         BandDictionaryData(32, 9920, 10359),
+        BandDictionaryData(33, 36000, 36199),
+        BandDictionaryData(34, 36200, 36349),
+        BandDictionaryData(35, 36350, 36949),
+        BandDictionaryData(36, 36950, 37549),
+        BandDictionaryData(37, 37550, 37749),
+        BandDictionaryData(38, 37750, 38249),
+        BandDictionaryData(39, 38250, 38649),
+        BandDictionaryData(40, 38650, 39649),
+        BandDictionaryData(41, 39650, 41589),
+        BandDictionaryData(42, 41590, 43589),
+        BandDictionaryData(43, 43590, 45589),
+        BandDictionaryData(44, 45590, 46589),
+        BandDictionaryData(45, 46590, 46789),
         BandDictionaryData(65, 65536, 66435),
         BandDictionaryData(66, 66436, 67335),
         BandDictionaryData(67, 67336, 67535),
@@ -54,7 +69,9 @@ object BandDictionary {
 
     /**
      * バンドとARFCNの相対表。NR（5G）版
-     * */
+     *
+     * 3GPP TS 38.101-1 参照
+     */
     private val bandNRList = listOf(
         BandDictionaryData(1, 422000, 434000),
         BandDictionaryData(2, 386000, 398000),

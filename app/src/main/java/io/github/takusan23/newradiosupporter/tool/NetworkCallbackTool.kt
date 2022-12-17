@@ -15,6 +15,10 @@ import kotlinx.coroutines.flow.callbackFlow
 /** ネットワーク関係のコールバック */
 object NetworkCallbackTool {
 
+    /** Android 12 以上かどうか */
+    private val isAndroidSAndLater: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+
     /**
      * 定額制、従量制をコールバックで受け取れるらしいんだけど動いてなくね？
      *
@@ -50,18 +54,17 @@ object NetworkCallbackTool {
      *
      * 5G接続時は、ノンスタンドアローンかスタンドアローンかどうかも返します。
      *
-     * [BandData]と[NetworkType]と[NrStandAloneType]の[Triple]をFlowで流します
-     *
      * @param context [Context]
      * @param subscriptionId SIMカードを指定する場合は[SubscriptionInfo.getSubscriptionId]を入れる。詳細は[listenMultipleSimNetworkStatus]参照。省略時はデフォルト
      * @return 接続中バンド情報、5Gの種類、5Gの方式 を返す
-     * */
+     */
     fun listenNetworkStatus(context: Context, subscriptionId: Int = SubscriptionManager.DEFAULT_SUBSCRIPTION_ID) = callbackFlow {
 
         // 一時的に値を持っておく
-        var tempNetworkType: NetworkType? = null
+        var tempRatType: NetworkType? = null
         var tempBandData: BandData? = null
         var nrStandAloneType: NrStandAloneType? = null
+        var hasSignalStrengthNr = false
         var simSlotIndex = 0
 
         /**
@@ -77,16 +80,28 @@ object NetworkCallbackTool {
             }
             val isMmWave = BandDictionary.isMmWave(bandData.earfcn)
             val result = when {
-                // Sub6かアンカーバンド接続中 かつ 5Gではない なら 4G 判定
-                tempNetworkType == NetworkType.NR_SUB6 && !bandData.isNR -> FinalNRType.ANCHOR_BAND
-                // Sub6かアンカーバンド接続中 かつ 5G なら Sub6判定
-                bandData.isNR && !isMmWave -> FinalNRType.NR_SUB6
+                // 4Gの場合の処理
+                // アンカーバンド か 5Gの電波強度だけ取得できたか
+                !bandData.isNR -> when {
+                    // SignalStrengthNr が取得できたら 5Gかもしれない 判定
+                    // CellInfoNr は取れないけど、電波強度だけ取れた場合は もしかして5G を表示する
+                    hasSignalStrengthNr -> FinalNRType.MAYBE_NR
+                    // アンカーバンド接続中 なら 4G 判定
+                    tempRatType == NetworkType.NR_SUB6 -> FinalNRType.ANCHOR_BAND
+                    // 多分 4G
+                    else -> FinalNRType.LTE
+                }
                 // ミリ波
-                bandData.isNR && isMmWave -> FinalNRType.NR_MMW
-                // そもそも4G
-                else -> FinalNRType.LTE
+                isMmWave -> FinalNRType.NR_MMW
+                // ミリ波以外 なら Sub6判定
+                else -> FinalNRType.NR_SUB6
             }
-            trySend(NetworkStatusData(simSlotIndex, bandData, result, nrStandAloneType ?: NrStandAloneType.ERROR))
+            trySend(NetworkStatusData(
+                simSlotIndex = simSlotIndex,
+                bandData = bandData,
+                finalNRType = result,
+                nrStandAloneType = nrStandAloneType ?: NrStandAloneType.ERROR
+            ))
         }
 
         if (PermissionCheckTool.isGranted(context)) {
@@ -101,19 +116,34 @@ object NetworkCallbackTool {
             simSlotIndex = subscriptionManager.getActiveSubscriptionInfo(subscriptionId).simSlotIndex
 
             // Android 12より書き方が変わった
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val callback = object : TelephonyCallback(), TelephonyCallback.DisplayInfoListener, TelephonyCallback.CellInfoListener {
-                    /** 実際の状態 */
-                    override fun onCellInfoChanged(cellInfo: MutableList<CellInfo?>) {
-                        // 機内モードから復帰時などにすぐ開くとなんか落ちるので
-                        tempBandData = cellInfo.getOrNull(0)?.let { convertBandData(it) }
+            if (isAndroidSAndLater) {
+                val callback = object : TelephonyCallback(), TelephonyCallback.DisplayInfoListener, TelephonyCallback.CellInfoListener, TelephonyCallback.SignalStrengthsListener {
+
+                    /** 電波強度 */
+                    override fun onSignalStrengthsChanged(signalStrength: SignalStrength) {
+                        // 一部の端末？（Qualcomm Snapdragon）で CellInfoNr が取れない
+                        // 取れないが、何故か NR（5G）の電波強度が取れる場合があり（なんで？）、もし取れた場合は 5Gかも知れない を表示している
+                        val cellSignalStrengthNr = signalStrength.getCellSignalStrengths(CellSignalStrengthNr::class.java)
+                        hasSignalStrengthNr = cellSignalStrengthNr.isNotEmpty()
                         sendResult()
                     }
 
-                    /** アンテナピクトと同じやつ */
+                    /** 実際の状態 */
+                    override fun onCellInfoChanged(cellInfo: MutableList<CellInfo?>) {
+                        // CellInfoNrを探して、もしない場合は 4G にする
+                        // Qualcomm Snapdragon 端末 と Google Tensor 端末 で挙動が違う
+                        // Google Tensor の場合は配列の最初に CellInfoNr があるみたい。
+                        // Qualcomm Snapdragon の場合、配列のどっかに CellInfoNr があるみたい。
+                        // で、 Qualcomm Snapdragon の場合で CellInfoNr が取れない場合がある（ CellSignalStrengthNr だけ取れる。バンドとかは取れないけど5Gの電波強度が取れる？）
+                        // ない場合は 4G か アンカーバンド？
+                        tempBandData = cellInfo.filterIsInstance<CellInfoNr>().firstOrNull()?.let { convertBandData(it) } ?: cellInfo.firstOrNull()?.let { convertBandData(it) }
+                        sendResult()
+                    }
+
+                    /** アンテナピクトと同じやつ。RAT表示とかいう */
                     @SuppressLint("MissingPermission")
                     override fun onDisplayInfoChanged(telephonyDisplayInfo: TelephonyDisplayInfo) {
-                        tempNetworkType = convertNetworkType(telephonyDisplayInfo)
+                        tempRatType = convertNetworkType(telephonyDisplayInfo)
                         nrStandAloneType = convertStandAloneType(telephonyDisplayInfo, telephonyManager.dataNetworkType)
                         sendResult()
                     }
@@ -122,23 +152,32 @@ object NetworkCallbackTool {
                 awaitClose { telephonyManager.unregisterTelephonyCallback(callback) }
             } else {
                 val callback = object : PhoneStateListener() {
+                    @SuppressLint("MissingPermission")
+                    override fun onSignalStrengthsChanged(signalStrength: SignalStrength) {
+                        // 一部の端末？（Qualcomm Snapdragon）で CellInfoNr が取れない
+                        // 取れないが、何故か NR（5G）の電波強度が取れる場合があり（なんで？）、もし取れた場合は 5Gかも知れない を表示している
+                        val cellSignalStrengthNr = signalStrength.getCellSignalStrengths(CellSignalStrengthNr::class.java)
+                        hasSignalStrengthNr = cellSignalStrengthNr.isNotEmpty()
+                        sendResult()
+                    }
 
                     @SuppressLint("MissingPermission")
                     override fun onCellInfoChanged(cellInfo: MutableList<CellInfo>?) {
                         super.onCellInfoChanged(cellInfo)
-                        tempBandData = cellInfo?.getOrNull(0)?.let { convertBandData(it) }
+                        // 上と同じ
+                        tempBandData = cellInfo?.filterIsInstance<CellInfoNr>()?.firstOrNull()?.let { convertBandData(it) } ?: cellInfo?.firstOrNull()?.let { convertBandData(it) }
                         sendResult()
                     }
 
                     @SuppressLint("MissingPermission")
                     override fun onDisplayInfoChanged(telephonyDisplayInfo: TelephonyDisplayInfo) {
                         super.onDisplayInfoChanged(telephonyDisplayInfo)
-                        tempNetworkType = convertNetworkType(telephonyDisplayInfo)
+                        tempRatType = convertNetworkType(telephonyDisplayInfo)
                         nrStandAloneType = convertStandAloneType(telephonyDisplayInfo, telephonyManager.dataNetworkType)
                         sendResult()
                     }
                 }
-                telephonyManager.listen(callback, PhoneStateListener.LISTEN_DISPLAY_INFO_CHANGED or PhoneStateListener.LISTEN_CELL_INFO)
+                telephonyManager.listen(callback, PhoneStateListener.LISTEN_DISPLAY_INFO_CHANGED or PhoneStateListener.LISTEN_CELL_INFO or PhoneStateListener.LISTEN_SIGNAL_STRENGTHS)
                 awaitClose { telephonyManager.listen(callback, PhoneStateListener.LISTEN_NONE) }
             }
         }
@@ -232,16 +271,16 @@ object NetworkCallbackTool {
      * @param cellInfo [TelephonyCallback.CellInfoListener]で取れるやつ
      * @return [BandData]。LTE/NR 以外はnullになります
      * */
-    private fun convertBandData(cellInfo: CellInfo) = when (cellInfo) {
+    private fun convertBandData(cellInfo: CellInfo) = when (val cellIdentity = cellInfo.cellIdentity) {
         // LTE
-        is CellInfoLte -> {
-            val earfcn = cellInfo.cellIdentity.earfcn
-            BandData(false, BandDictionary.toLTEBand(earfcn), earfcn, cellInfo.cellIdentity.operatorAlphaShort.toString())
+        is CellIdentityLte -> {
+            val earfcn = cellIdentity.earfcn
+            BandData(false, BandDictionary.toLTEBand(earfcn), earfcn, cellIdentity.operatorAlphaShort.toString())
         }
         // 5G (NR)
-        is CellInfoNr -> {
-            val nrarfcn = (cellInfo.cellIdentity as CellIdentityNr).nrarfcn
-            BandData(true, BandDictionary.toNRBand(nrarfcn), nrarfcn, cellInfo.cellIdentity.operatorAlphaShort.toString())
+        is CellIdentityNr -> {
+            val nrarfcn = cellIdentity.nrarfcn
+            BandData(true, BandDictionary.toNRBand(nrarfcn), nrarfcn, cellIdentity.operatorAlphaShort.toString())
         }
         else -> null
     }
@@ -265,16 +304,23 @@ enum class NetworkType {
     NR_MMW,
 }
 
-/** 4G / EN-DC / 5G Sub6 / 5G mmWave */
+/**
+ * 5Gの状態
+ * 4G / 5Gかもしれない / 5G Sub6 / 5G mmWave
+ */
 enum class FinalNRType {
-    /** ピクト表示では5Gだが、実はアンカーバンドの圏内であり、5G接続は利用できないことを示す */
-    ANCHOR_BAND,
+
+    /** 実際に5Gのミリ波ネットワークに接続している */
+    NR_MMW,
 
     /** 実際に5GのSub6ネットワークに接続している */
     NR_SUB6,
 
-    /** 実際に5Gのミリ波ネットワークに接続している */
-    NR_MMW,
+    /** 5Gの可能性がある。バンド情報は取得できないが、5Gの電波強度だけ取得できたパターン */
+    MAYBE_NR,
+
+    /** ピクト表示では5Gだが、実はアンカーバンドの圏内であり、5G接続は利用できないことを示す */
+    ANCHOR_BAND,
 
     /** そもそも4Gだしアンカーバンドの圏内にすらいない */
     LTE,
