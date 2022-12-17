@@ -154,6 +154,7 @@ object NetworkCallbackTool {
                 val callback = object : PhoneStateListener() {
                     @SuppressLint("MissingPermission")
                     override fun onSignalStrengthsChanged(signalStrength: SignalStrength) {
+                        runCatching { super.onSignalStrengthsChanged(signalStrength) }
                         // 一部の端末？（Qualcomm Snapdragon）で CellInfoNr が取れない
                         // 取れないが、何故か NR（5G）の電波強度が取れる場合があり（なんで？）、もし取れた場合は 5Gかも知れない を表示している
                         val cellSignalStrengthNr = signalStrength.getCellSignalStrengths(CellSignalStrengthNr::class.java)
@@ -163,7 +164,9 @@ object NetworkCallbackTool {
 
                     @SuppressLint("MissingPermission")
                     override fun onCellInfoChanged(cellInfo: MutableList<CellInfo>?) {
-                        super.onCellInfoChanged(cellInfo)
+                        // テストコードで super 呼べないため
+                        // super、空実装なので呼ぶ必要ない気がするけど一応、、、
+                        runCatching { super.onCellInfoChanged(cellInfo) }
                         // 上と同じ
                         tempBandData = cellInfo?.filterIsInstance<CellInfoNr>()?.firstOrNull()?.let { convertBandData(it) } ?: cellInfo?.firstOrNull()?.let { convertBandData(it) }
                         sendResult()
@@ -171,7 +174,7 @@ object NetworkCallbackTool {
 
                     @SuppressLint("MissingPermission")
                     override fun onDisplayInfoChanged(telephonyDisplayInfo: TelephonyDisplayInfo) {
-                        super.onDisplayInfoChanged(telephonyDisplayInfo)
+                        runCatching { super.onDisplayInfoChanged(telephonyDisplayInfo) }
                         tempRatType = convertNetworkType(telephonyDisplayInfo)
                         nrStandAloneType = convertStandAloneType(telephonyDisplayInfo, telephonyManager.dataNetworkType)
                         sendResult()
