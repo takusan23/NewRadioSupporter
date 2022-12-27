@@ -28,4 +28,5 @@
     <string name="type_stand_alone_5g_short">SA</string>
     <string name="type_4g_short">4G</string>
     <string name="sim_network_overview_title">SIM</string>
+    <string name="type_maybe_nr">It may be 5G. (I could not acquire the band etc.)</string>
 </resources>

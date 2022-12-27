@@ -89,7 +89,7 @@ private fun ConnectedStatusMessage(finalNRType: FinalNRType) {
         text = when (finalNRType) {
             FinalNRType.NR_MMW -> stringResource(id = R.string.type_nr_mmwave)
             FinalNRType.NR_SUB6 -> stringResource(id = R.string.type_nr_sub6)
-            FinalNRType.MAYBE_NR -> "もしかしたら5Gかもしれません。（バンド等は取得できませんでした）"
+            FinalNRType.MAYBE_NR -> stringResource(id = R.string.type_maybe_nr)
             FinalNRType.ANCHOR_BAND -> stringResource(id = R.string.type_lte_anchor_band)
             FinalNRType.LTE -> stringResource(id = R.string.type_lte)
             else -> stringResource(id = R.string.loading)
