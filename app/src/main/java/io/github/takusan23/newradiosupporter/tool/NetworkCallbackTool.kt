@@ -79,7 +79,8 @@ object NetworkCallbackTool {
                 return
             }
             val isMmWave = BandDictionary.isMmWave(bandData.earfcn)
-            val result = when {
+            val isLteFrequency = BandDictionary.isLteFrequency(bandData.earfcn)
+            val nrType = when {
                 // 4Gの場合の処理
                 // アンカーバンド か 5Gの電波強度だけ取得できたか
                 !bandData.isNR -> when {
@@ -91,6 +92,8 @@ object NetworkCallbackTool {
                     // 多分 4G
                     else -> FinalNRType.LTE
                 }
+                // 転用5G
+                isLteFrequency -> FinalNRType.NR_LTE_FREQUENCY
                 // ミリ波
                 isMmWave -> FinalNRType.NR_MMW
                 // ミリ波以外 なら Sub6判定
@@ -99,7 +102,7 @@ object NetworkCallbackTool {
             trySend(NetworkStatusData(
                 simSlotIndex = simSlotIndex,
                 bandData = bandData,
-                finalNRType = result,
+                finalNRType = nrType,
                 nrStandAloneType = nrStandAloneType ?: NrStandAloneType.ERROR
             ))
         }
@@ -278,12 +281,24 @@ object NetworkCallbackTool {
         // LTE
         is CellIdentityLte -> {
             val earfcn = cellIdentity.earfcn
-            BandData(false, BandDictionary.toLTEBand(earfcn), earfcn, cellIdentity.operatorAlphaShort.toString())
+            BandData(
+                isNR = false,
+                band = BandDictionary.toLTEBand(earfcn),
+                earfcn = earfcn,
+                carrierName = cellIdentity.operatorAlphaShort.toString(),
+                frequencyMHz = null,
+            )
         }
         // 5G (NR)
         is CellIdentityNr -> {
             val nrarfcn = cellIdentity.nrarfcn
-            BandData(true, BandDictionary.toNRBand(nrarfcn), nrarfcn, cellIdentity.operatorAlphaShort.toString())
+            BandData(
+                isNR = true,
+                band = BandDictionary.toNRBand(nrarfcn),
+                earfcn = nrarfcn,
+                carrierName = cellIdentity.operatorAlphaShort.toString(),
+                frequencyMHz = BandDictionary.toFrequencyMHz(nrarfcn),
+            )
         }
         else -> null
     }
@@ -318,6 +333,9 @@ enum class FinalNRType {
 
     /** 実際に5GのSub6ネットワークに接続している */
     NR_SUB6,
+
+    /** 実際に転用5Gネットワークに接続している */
+    NR_LTE_FREQUENCY,
 
     /** 5Gの可能性がある。バンド情報は取得できないが、5Gの電波強度だけ取得できたパターン */
     MAYBE_NR,

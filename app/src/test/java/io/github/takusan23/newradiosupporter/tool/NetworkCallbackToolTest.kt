@@ -101,6 +101,43 @@ class NetworkCallbackToolTest {
     }
 
     @Test
+    fun listenNetworkStatus_転用5Gを検出できる() = runTest {
+        // Android 12 以上で
+        mockkObject(NetworkCallbackTool)
+        every { NetworkCallbackTool.getProperty("isAndroidSAndLater") }.returns(true)
+
+        // 返り値をモックする
+        val cellIdentityNr = mockk<CellIdentityNr>()
+        every { cellIdentityNr.nrarfcn }.returns(635424)
+        every { cellIdentityNr.operatorAlphaShort }.returns("DOCOMO")
+        val cellInfoNr = mockk<CellInfoNr>()
+        every { cellInfoNr.cellIdentity }.returns(cellIdentityNr)
+        // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
+        val cellInfoLte = mockk<CellInfoLte>()
+
+        // TelephonyManager をモックしてコールバックの処理を差し替える
+        val telephonyManager = mockk<TelephonyManager>()
+        every { telephonyManager.createForSubscriptionId(any()) }.returns(telephonyManager)
+        every { telephonyManager.unregisterTelephonyCallback(any()) }.returns(Unit)
+        // CellInfoNr がコールバックで返るように
+        every { telephonyManager.registerTelephonyCallback(any(), any()) }.answers { answers ->
+            (answers.invocation.args[1] as TelephonyCallback.CellInfoListener).onCellInfoChanged(listOf(cellInfoLte, cellInfoNr))
+        }
+
+        // TelephonyManagerを返す
+        val context = mockk<Context>()
+        every { context.getSystemService(eq(Context.TELEPHONY_SERVICE)) }.returns(telephonyManager)
+        every { context.getSystemService(eq(Context.TELEPHONY_SUBSCRIPTION_SERVICE)) }.returns(createMockSubscriptionManager())
+        every { context.mainExecutor }.returns(mockk())
+
+        val networkStatusData = NetworkCallbackTool.listenNetworkStatus(context).first()!!
+        Assert.assertEquals(networkStatusData.finalNRType, FinalNRType.NR_LTE_FREQUENCY)
+        Assert.assertEquals(networkStatusData.bandData.isNR, true)
+        Assert.assertEquals(networkStatusData.bandData.band, "n78")
+        Assert.assertEquals(networkStatusData.bandData.earfcn, 635424)
+    }
+
+    @Test
     fun listenNetworkStatus_アンカーバンドを検出できる() = runTest {
         // Android 12 以上で
         mockkObject(NetworkCallbackTool)

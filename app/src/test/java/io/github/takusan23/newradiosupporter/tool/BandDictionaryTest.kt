@@ -31,4 +31,27 @@ class BandDictionaryTest {
         val bandN78 = BandDictionary.isMmWave(643334)
         Assert.assertEquals(bandN78, false)
     }
+
+    @Test
+    fun toFrequencyMHz_NRARFCNから周波数を計算できる() {
+        val frequency_798 = 159600
+        Assert.assertEquals(BandDictionary.toFrequencyMHz(frequency_798), 798f)
+        val freqency_3531_36 = 635424
+        Assert.assertEquals(BandDictionary.toFrequencyMHz(freqency_3531_36), 3531.36f)
+        val freqency_3650_01 = 643334
+        Assert.assertEquals(BandDictionary.toFrequencyMHz(freqency_3650_01), 3650.01f)
+        val frequency_27450_96 = 2070015
+        Assert.assertEquals(BandDictionary.toFrequencyMHz(frequency_27450_96), 27450.96f)
+    }
+
+    @Test
+    fun isLowBand_NRARFCNから転用5Gかどうかの判定ができる() {
+        val bandN20 = 159600
+        Assert.assertEquals(BandDictionary.isLteFrequency(bandN20), true)
+        val bandN78 = 643334
+        Assert.assertEquals(BandDictionary.isLteFrequency(bandN78), false)
+        val bandN78LteFrequency = 635424
+        Assert.assertEquals(BandDictionary.isLteFrequency(bandN78LteFrequency), true)
+    }
+
 }

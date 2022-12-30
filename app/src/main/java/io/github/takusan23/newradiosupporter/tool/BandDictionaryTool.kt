@@ -7,6 +7,9 @@ package io.github.takusan23.newradiosupporter.tool
  */
 object BandDictionary {
 
+    /** Sub-6 5G 新周波数帯。転用5Gは含まれない */
+    private const val SUB6_FREQUENCY_WITHOUT_LOW_BAND_MHZ = 3600
+
     /**
      * バンドとEARFCN（最小値と最大値）の相対表。LTE（4G）版
      *
@@ -133,7 +136,40 @@ object BandDictionary {
      *
      * @return ミリ波ならtrue
      * */
-    fun isMmWave(nrarfcn: Int) = nrarfcn >= bandNRList.find { it.bandNum == 257 }!!.dlMin
+    fun isMmWave(nrarfcn: Int): Boolean = nrarfcn >= bandNRList.find { it.bandNum == 257 }!!.dlMin
+
+    /**
+     * NRARFCN から 周波数を求める。
+     * 計算式は「3GPP TS 38.104 5.4.2.1」を参照してください。
+     *
+     * @return 周波数。単位は MHz 。3600とか。
+     */
+    fun toFrequencyMHz(nrarfcn: Int): Float {
+        // 計算に必要な、 FREF-Offs / FGlobal / NREF-Offs を NRARFCN から出す
+        // 資料では FGlobal は kHz だが、 MHz に合わせるため変換している
+        val (FGlobal, FREFOffs, NREFOffs) = when (nrarfcn) {
+            // 3 GHz 以下
+            in 0..599999 -> Triple(0.005f, 0f, 0)
+            // 3 GHz から 24.25 GHz
+            in 600000..2016666 -> Triple(0.015f, 3000f, 600000)
+            // 24.25 GHz 以上
+            in 2016667..3279165 -> Triple(0.060f, 24250.08f, 2016667)
+            // ありえないので適当にreturn
+            else -> return -1f
+        }
+        // FREFOffs + FGlobal( NRARFCN - NREFOffs ) の計算をする
+        val frequencyMHz = FREFOffs + ((FGlobal * nrarfcn) - (FGlobal * NREFOffs))
+        // 小数点第二位までにする
+        return "%.2f".format(frequencyMHz).toFloat()
+    }
+
+    /**
+     * 転用5G / なんちゃって5G / NR化 かどうかを判定する。
+     * 具体的には、NRARFCNから周波数を出して、周波数が 3.6GHz [SUB6_FREQUENCY_WITHOUT_LOW_BAND_MHZ] 未満の場合は転用5Gの判定を行う。
+     *
+     * @return 転用5Gかどうか
+     */
+    fun isLteFrequency(nrarfcn: Int): Boolean = toFrequencyMHz(nrarfcn) < SUB6_FREQUENCY_WITHOUT_LOW_BAND_MHZ
 
 }
 

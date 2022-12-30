@@ -60,6 +60,7 @@ fun SimNetworkOverview(
                     modifier = Modifier.size(40.dp),
                     painter = painterResource(id = when (finalNRType) {
                         FinalNRType.ANCHOR_BAND -> R.drawable.ic_android_anchor_lte_band
+                        FinalNRType.NR_LTE_FREQUENCY -> R.drawable.android_nr_lte_freq_nr
                         FinalNRType.NR_SUB6 -> R.drawable.ic_android_nr_sub6
                         FinalNRType.NR_MMW -> R.drawable.ic_android_nr_mmw
                         FinalNRType.LTE -> R.drawable.ic_android_lte
