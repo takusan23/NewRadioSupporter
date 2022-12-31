@@ -45,7 +45,7 @@ class BandDictionaryTest {
     }
 
     @Test
-    fun isLowBand_NRARFCNから転用5Gかどうかの判定ができる() {
+    fun isLteFrequency_NRARFCNから転用5Gかどうかの判定ができる() {
         val bandN20 = 159600
         Assert.assertEquals(BandDictionary.isLteFrequency(bandN20), true)
         val bandN78 = 643334
