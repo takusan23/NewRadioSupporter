@@ -31,5 +31,5 @@
     <string name="sim_network_overview_title">SIM</string>
     <string name="type_maybe_nr">もしかしたら5Gかもしれないです。（バンド等は取得できませんでした。）</string>
     <string name="frequency">周波数</string>
-    <string name="lte_freq_nr">転用5Gに接続中です。通信速度は4Gと同等になります。</string>
+    <string name="type_lte_freq_nr">転用5Gに接続中です。通信速度は4Gと同等になります。</string>
 </resources>

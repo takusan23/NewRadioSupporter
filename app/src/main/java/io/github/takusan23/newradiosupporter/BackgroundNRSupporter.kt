@@ -94,6 +94,7 @@ class BackgroundNRSupporter : Service() {
         return NotificationCompat.Builder(this, channelId).apply {
             val networkType = when (finalNRType) {
                 FinalNRType.ANCHOR_BAND -> getString(R.string.type_lte_anchor_band)
+                FinalNRType.NR_LTE_FREQUENCY -> getString(R.string.type_lte_freq_nr)
                 FinalNRType.NR_SUB6 -> getString(R.string.type_nr_sub6)
                 FinalNRType.NR_MMW -> getString(R.string.type_nr_mmwave)
                 FinalNRType.LTE -> getString(R.string.type_lte)
@@ -106,6 +107,7 @@ class BackgroundNRSupporter : Service() {
             setContentText("$networkType\n$bandText")
             setSmallIcon(when (finalNRType) {
                 FinalNRType.ANCHOR_BAND -> R.drawable.ic_android_anchor_lte_band
+                FinalNRType.NR_LTE_FREQUENCY -> R.drawable.android_nr_lte_freq_nr
                 FinalNRType.NR_SUB6 -> R.drawable.ic_android_nr_sub6
                 FinalNRType.NR_MMW -> R.drawable.ic_android_nr_mmw
                 FinalNRType.LTE -> R.drawable.ic_android_lte
@@ -113,6 +115,8 @@ class BackgroundNRSupporter : Service() {
             })
             // 通知押したとき
             setContentIntent(PendingIntent.getActivity(this@BackgroundNRSupporter, 1, Intent(this@BackgroundNRSupporter, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE))
+            // 展開時に文字を多く表示させる
+            setStyle(NotificationCompat.BigTextStyle().bigText("$networkType\n$bandText"))
             // 終了ボタン
             addAction(R.drawable.ic_outline_close_24, "終了", PendingIntent.getBroadcast(this@BackgroundNRSupporter, 1, Intent(STOP_SERVICE_BROADCAST), PendingIntent.FLAG_IMMUTABLE))
         }.build().apply {

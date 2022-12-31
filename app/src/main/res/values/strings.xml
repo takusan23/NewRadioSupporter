@@ -30,5 +30,5 @@
     <string name="sim_network_overview_title">SIM</string>
     <string name="type_maybe_nr">It may be 5G. (I could not acquire the band etc.)</string>
     <string name="frequency">Frequency</string>
-    <string name="lte_freq_nr">I\'m connecting to repurposed 5G. Communication speed will be equivalent to 4G.</string>
+    <string name="type_lte_freq_nr">I\'m connecting to repurposed 5G. Communication speed will be equivalent to 4G.</string>
 </resources>

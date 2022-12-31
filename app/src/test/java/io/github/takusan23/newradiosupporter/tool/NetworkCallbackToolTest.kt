@@ -58,6 +58,7 @@ class NetworkCallbackToolTest {
 
         val networkStatusData = NetworkCallbackTool.listenNetworkStatus(context).first()!!
         Assert.assertEquals(networkStatusData.finalNRType, FinalNRType.NR_SUB6)
+        Assert.assertEquals(networkStatusData.finalNRType.isNr, true)
         Assert.assertEquals(networkStatusData.bandData.isNR, true)
         Assert.assertEquals(networkStatusData.bandData.band, "n78")
         Assert.assertEquals(networkStatusData.bandData.earfcn, 643334)
@@ -96,6 +97,7 @@ class NetworkCallbackToolTest {
         val networkStatusData = NetworkCallbackTool.listenNetworkStatus(context).first()!!
         Assert.assertEquals(networkStatusData.finalNRType, FinalNRType.NR_MMW)
         Assert.assertEquals(networkStatusData.bandData.isNR, true)
+        Assert.assertEquals(networkStatusData.finalNRType.isNr, true)
         Assert.assertEquals(networkStatusData.bandData.band, "n257")
         Assert.assertEquals(networkStatusData.bandData.earfcn, 2070015)
     }
@@ -133,6 +135,7 @@ class NetworkCallbackToolTest {
         val networkStatusData = NetworkCallbackTool.listenNetworkStatus(context).first()!!
         Assert.assertEquals(networkStatusData.finalNRType, FinalNRType.NR_LTE_FREQUENCY)
         Assert.assertEquals(networkStatusData.bandData.isNR, true)
+        Assert.assertEquals(networkStatusData.finalNRType.isNr, true)
         Assert.assertEquals(networkStatusData.bandData.band, "n78")
         Assert.assertEquals(networkStatusData.bandData.earfcn, 635424)
     }
@@ -175,6 +178,7 @@ class NetworkCallbackToolTest {
         val networkStatusData = NetworkCallbackTool.listenNetworkStatus(context).drop(1).first()!!
         Assert.assertEquals(networkStatusData.finalNRType, FinalNRType.ANCHOR_BAND)
         Assert.assertEquals(networkStatusData.bandData.isNR, false)
+        Assert.assertEquals(networkStatusData.finalNRType.isNr, false)
         Assert.assertEquals(networkStatusData.bandData.band, "3")
         Assert.assertEquals(networkStatusData.bandData.earfcn, 1500)
     }

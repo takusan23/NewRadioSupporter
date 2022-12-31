@@ -347,7 +347,11 @@ enum class FinalNRType {
     LTE,
 
     /** エラー。準備中など */
-    ERROR
+    ERROR;
+
+    /** 5G ( SUb-6 / ミリ波 / 転用5G ) の場合は true */
+    val isNr: Boolean
+        get() = this == NR_SUB6 || this == NR_MMW || this == NR_LTE_FREQUENCY
 }
 
 /**
