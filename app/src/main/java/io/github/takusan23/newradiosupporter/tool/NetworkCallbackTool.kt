@@ -99,12 +99,14 @@ object NetworkCallbackTool {
                 // ミリ波以外 なら Sub6判定
                 else -> FinalNRType.NR_SUB6
             }
-            trySend(NetworkStatusData(
-                simSlotIndex = simSlotIndex,
-                bandData = bandData,
-                finalNRType = nrType,
-                nrStandAloneType = nrStandAloneType ?: NrStandAloneType.ERROR
-            ))
+            trySend(
+                NetworkStatusData(
+                    simSlotIndex = simSlotIndex,
+                    bandData = bandData,
+                    finalNRType = nrType,
+                    nrStandAloneType = nrStandAloneType ?: NrStandAloneType.ERROR
+                )
+            )
         }
 
         if (PermissionCheckTool.isGranted(context)) {
@@ -120,7 +122,7 @@ object NetworkCallbackTool {
 
             // Android 12より書き方が変わった
             if (isAndroidSAndLater) {
-                val callback = object : TelephonyCallback(), TelephonyCallback.DisplayInfoListener, TelephonyCallback.CellInfoListener, TelephonyCallback.SignalStrengthsListener {
+                val callback = object : TelephonyCallback(), TelephonyCallback.DisplayInfoListener, NullableCellInfoListener, TelephonyCallback.SignalStrengthsListener {
 
                     /** 電波強度 */
                     override fun onSignalStrengthsChanged(signalStrength: SignalStrength) {
@@ -132,7 +134,14 @@ object NetworkCallbackTool {
                     }
 
                     /** 実際の状態 */
-                    override fun onCellInfoChanged(cellInfo: MutableList<CellInfo?>) {
+                    override fun onCellInfoChanged(cellInfo: MutableList<CellInfo?>?) {
+                        // TelephonyCallback#onCellInfoChanged の cellInfo は NonNull だが、端末によっては null を渡すことがある。
+                        // Java の場合は NonNull はアノテーションなので静的解析時に null チェックをするため、Java の場合は null を渡して呼び出しても動いていた。
+                        // Kotlin の場合は NonNull は実行時にも nullチェックを行うため落ちてしまう。
+                        // なので Java で Interface を作成し、TelephonyCallback#onCellInfoChanged を継承し、cellInfo が Nullable になるように修正したものを利用している。
+                        if (cellInfo == null) {
+                            return
+                        }
                         // CellInfoNrを探して、もしない場合は 4G にする
                         // Qualcomm Snapdragon 端末 と Google Tensor 端末 で挙動が違う
                         // Google Tensor の場合は配列の最初に CellInfoNr があるみたい。
