@@ -15,6 +15,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.takusan23.newradiosupporter.BackgroundNRSupporter
 import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.tool.NetworkCallbackTool
+import io.github.takusan23.newradiosupporter.tool.SettingIntentTool
 import io.github.takusan23.newradiosupporter.ui.component.*
 
 /** 回線状態を表示している Card の tonalElevation */
@@ -98,16 +99,18 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                 }
             }
             item {
-                BackgroundServiceItem(
-                    modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                    onClick = {
-                        if (BackgroundNRSupporter.isServiceRunning(context)) {
-                            BackgroundNRSupporter.stopService(context)
-                        } else {
-                            BackgroundNRSupporter.startService(context)
-                        }
+                OpenMobileNetworkSettingMenu(modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp)) {
+                    SettingIntentTool.openMobileDataNetworkSetting(context)
+                }
+            }
+            item {
+                BackgroundServiceItem(modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp)) {
+                    if (BackgroundNRSupporter.isServiceRunning(context)) {
+                        BackgroundNRSupporter.stopService(context)
+                    } else {
+                        BackgroundNRSupporter.startService(context)
                     }
-                )
+                }
             }
         }
     }

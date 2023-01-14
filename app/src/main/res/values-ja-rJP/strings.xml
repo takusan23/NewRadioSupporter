@@ -32,4 +32,6 @@
     <string name="type_maybe_nr">もしかしたら5Gかもしれないです。（バンド等は取得できませんでした。）</string>
     <string name="frequency">周波数</string>
     <string name="type_lte_freq_nr">転用5Gに接続中です。通信速度は4Gと同等になります。</string>
+    <string name="open_mobile_data_setting_screen_description">端末の設定画面を開きます</string>
+    <string name="open_mobile_data_setting_screen_title">モバイルデータの設定画面を開く</string>
 </resources>
