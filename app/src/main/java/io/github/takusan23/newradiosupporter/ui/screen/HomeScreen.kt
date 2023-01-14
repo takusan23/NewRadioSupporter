@@ -11,6 +11,7 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.takusan23.newradiosupporter.BackgroundNRSupporter
 import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.tool.NetworkCallbackTool
@@ -32,8 +33,8 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     // Flowで収集する
-    val isUnlimitedNetwork = remember { NetworkCallbackTool.listenUnlimitedNetwork(context) }.collectAsState(initial = null)
-    val multipleNetworkStatusList = remember { NetworkCallbackTool.listenMultipleSimNetworkStatus(context) }.collectAsState(initial = emptyList())
+    val isUnlimitedNetwork = remember { NetworkCallbackTool.listenUnlimitedNetwork(context) }.collectAsStateWithLifecycle(initialValue = null)
+    val multipleNetworkStatusList = remember { NetworkCallbackTool.listenMultipleSimNetworkStatus(context) }.collectAsStateWithLifecycle(initialValue = emptyList())
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -52,7 +53,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
         ) {
             // SIMカードの数だけ Flow を監視する
             itemsIndexed(multipleNetworkStatusList.value) { _, statusFlow ->
-                val status = statusFlow.collectAsState(initial = null)
+                val status = statusFlow.collectAsStateWithLifecycle(initialValue = null)
                 // 押したら展開できるようにするため
                 val isExpanded = remember { mutableStateOf(false) }
                 // 初期値はデータ通信に設定されたSIMカードのスロット番号

@@ -71,7 +71,7 @@ object NetworkCallbackTool {
          * [TelephonyCallback.CellInfoListener] / [TelephonyCallback.DisplayInfoListener]どっちかが更新されたら呼ぶ
          *
          * Flowに値を返します
-         * */
+         */
         fun sendResult() {
             val bandData = tempBandData
             if (bandData == null) {
@@ -119,6 +119,8 @@ object NetworkCallbackTool {
             // SIMスロット番号を取得する
             @SuppressLint("MissingPermission")
             simSlotIndex = subscriptionManager.getActiveSubscriptionInfo(subscriptionId).simSlotIndex
+            // CellInfoIdentity#operatorName が空文字を返すので
+            val carrierName = telephonyManager.networkOperatorName
 
             // Android 12より書き方が変わった
             if (isAndroidSAndLater) {
@@ -148,7 +150,7 @@ object NetworkCallbackTool {
                         // Qualcomm Snapdragon の場合、配列のどっかに CellInfoNr があるみたい。
                         // で、 Qualcomm Snapdragon の場合で CellInfoNr が取れない場合がある（ CellSignalStrengthNr だけ取れる。バンドとかは取れないけど5Gの電波強度が取れる？）
                         // ない場合は 4G か アンカーバンド？
-                        tempBandData = cellInfo.filterIsInstance<CellInfoNr>().firstOrNull()?.let { convertBandData(it) } ?: cellInfo.firstOrNull()?.let { convertBandData(it) }
+                        tempBandData = cellInfo.filterIsInstance<CellInfoNr>().firstOrNull()?.let { convertBandData(it, carrierName) } ?: cellInfo.firstOrNull()?.let { convertBandData(it, carrierName) }
                         sendResult()
                     }
 
@@ -180,7 +182,7 @@ object NetworkCallbackTool {
                         // super、空実装なので呼ぶ必要ない気がするけど一応、、、
                         runCatching { super.onCellInfoChanged(cellInfo) }
                         // 上と同じ
-                        tempBandData = cellInfo?.filterIsInstance<CellInfoNr>()?.firstOrNull()?.let { convertBandData(it) } ?: cellInfo?.firstOrNull()?.let { convertBandData(it) }
+                        tempBandData = cellInfo?.filterIsInstance<CellInfoNr>()?.firstOrNull()?.let { convertBandData(it, carrierName) } ?: cellInfo?.firstOrNull()?.let { convertBandData(it, carrierName) }
                         sendResult()
                     }
 
@@ -284,9 +286,10 @@ object NetworkCallbackTool {
      * [CellInfo]を簡略化した[BandData]に変換する
      *
      * @param cellInfo [TelephonyCallback.CellInfoListener]で取れるやつ
+     * @param carrierName キャリア名。[TelephonyManager.getNetworkOperatorName]
      * @return [BandData]。LTE/NR 以外はnullになります
      * */
-    private fun convertBandData(cellInfo: CellInfo) = when (val cellIdentity = cellInfo.cellIdentity) {
+    private fun convertBandData(cellInfo: CellInfo, carrierName: String) = when (val cellIdentity = cellInfo.cellIdentity) {
         // LTE
         is CellIdentityLte -> {
             val earfcn = cellIdentity.earfcn
@@ -294,7 +297,7 @@ object NetworkCallbackTool {
                 isNR = false,
                 band = BandDictionary.toLTEBand(earfcn),
                 earfcn = earfcn,
-                carrierName = cellIdentity.operatorAlphaShort.toString(),
+                carrierName = carrierName,
                 frequencyMHz = null,
             )
         }
@@ -305,7 +308,7 @@ object NetworkCallbackTool {
                 isNR = true,
                 band = BandDictionary.toNRBand(nrarfcn),
                 earfcn = nrarfcn,
-                carrierName = cellIdentity.operatorAlphaShort.toString(),
+                carrierName = carrierName,
                 frequencyMHz = BandDictionary.toFrequencyMHz(nrarfcn),
             )
         }

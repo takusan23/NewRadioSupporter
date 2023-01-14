@@ -63,6 +63,8 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.6.1")
     implementation("androidx.compose.material3:material3:1.1.0-alpha01")
     implementation("androidx.navigation:navigation-compose:2.5.3")
+    // collectAsStateWithLifecycle
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.0-alpha04")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.6.4")
 
