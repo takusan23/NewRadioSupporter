@@ -11,6 +11,8 @@ import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.NetworkStatusData
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 /** ネットワーク関係のコールバック */
 object NetworkCallbackTool {
@@ -121,6 +123,9 @@ object NetworkCallbackTool {
             simSlotIndex = subscriptionManager.getActiveSubscriptionInfo(subscriptionId).simSlotIndex
             // CellInfoIdentity#operatorName が空文字を返すので
             val carrierName = telephonyManager.networkOperatorName
+
+            // セル情報を強制的に更新する
+            requestCellInfoUpdate(context, telephonyManager)
 
             // Android 12より書き方が変わった
             if (isAndroidSAndLater) {
@@ -280,6 +285,21 @@ object NetworkCallbackTool {
                         || telephonyDisplayInfo.overrideNetworkType == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA) -> NrStandAloneType.NON_STAND_ALONE
         // 5Gじゃない
         else -> NrStandAloneType.ERROR
+    }
+
+    /** [TelephonyManager.requestCellInfoUpdate]を実行する。最新の状態にする */
+    @SuppressLint("MissingPermission")
+    private suspend fun requestCellInfoUpdate(context: Context, telephonyManager: TelephonyManager) = suspendCoroutine { continuation ->
+        telephonyManager.requestCellInfoUpdate(context.mainExecutor, object : TelephonyManager.CellInfoCallback() {
+            override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
+                continuation.resume(Unit)
+            }
+
+            override fun onError(errorCode: Int, detail: Throwable?) {
+                super.onError(errorCode, detail)
+                continuation.resume(Unit)
+            }
+        })
     }
 
     /**

@@ -2,6 +2,7 @@ package io.github.takusan23.newradiosupporter.tool
 
 import android.content.Context
 import android.telephony.*
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -31,6 +32,8 @@ class NetworkCallbackToolTest {
         // Android 12 以上で
         mockkObject(NetworkCallbackTool)
         every { NetworkCallbackTool.getProperty("isAndroidSAndLater") }.returns(true)
+        // requestCellInfoUpdate も適当にモックする
+        coEvery { NetworkCallbackTool.invoke("requestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(Unit)
 
         // 返り値をモックする
         val cellIdentityNr = mockk<CellIdentityNr>()
@@ -43,6 +46,7 @@ class NetworkCallbackToolTest {
 
         // TelephonyManager をモックしてコールバックの処理を差し替える
         val telephonyManager = mockk<TelephonyManager>()
+        every { telephonyManager.networkOperatorName }.returns("DOCOMO")
         every { telephonyManager.createForSubscriptionId(any()) }.returns(telephonyManager)
         every { telephonyManager.unregisterTelephonyCallback(any()) }.returns(Unit)
         // CellInfoNr がコールバックで返るように
@@ -69,6 +73,7 @@ class NetworkCallbackToolTest {
         // Android 12 以上で
         mockkObject(NetworkCallbackTool)
         every { NetworkCallbackTool.getProperty("isAndroidSAndLater") }.returns(true)
+        coEvery { NetworkCallbackTool.invoke("requestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(Unit)
 
         // 返り値をモックする
         val cellIdentityNr = mockk<CellIdentityNr>()
@@ -81,6 +86,7 @@ class NetworkCallbackToolTest {
 
         // TelephonyManager をモックしてコールバックの処理を差し替える
         val telephonyManager = mockk<TelephonyManager>()
+        every { telephonyManager.networkOperatorName }.returns("DOCOMO")
         every { telephonyManager.createForSubscriptionId(any()) }.returns(telephonyManager)
         every { telephonyManager.unregisterTelephonyCallback(any()) }.returns(Unit)
         // CellInfoNr がコールバックで返るように
@@ -107,6 +113,7 @@ class NetworkCallbackToolTest {
         // Android 12 以上で
         mockkObject(NetworkCallbackTool)
         every { NetworkCallbackTool.getProperty("isAndroidSAndLater") }.returns(true)
+        coEvery { NetworkCallbackTool.invoke("requestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(Unit)
 
         // 返り値をモックする
         val cellIdentityNr = mockk<CellIdentityNr>()
@@ -119,6 +126,7 @@ class NetworkCallbackToolTest {
 
         // TelephonyManager をモックしてコールバックの処理を差し替える
         val telephonyManager = mockk<TelephonyManager>()
+        every { telephonyManager.networkOperatorName }.returns("DOCOMO")
         every { telephonyManager.createForSubscriptionId(any()) }.returns(telephonyManager)
         every { telephonyManager.unregisterTelephonyCallback(any()) }.returns(Unit)
         // CellInfoNr がコールバックで返るように
@@ -145,6 +153,7 @@ class NetworkCallbackToolTest {
         // Android 12 以上で
         mockkObject(NetworkCallbackTool)
         every { NetworkCallbackTool.getProperty("isAndroidSAndLater") }.returns(true)
+        coEvery { NetworkCallbackTool.invoke("requestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(Unit)
 
         // 返り値をモックする
         val cellIdentityLte = mockk<CellIdentityLte>()
@@ -159,6 +168,7 @@ class NetworkCallbackToolTest {
 
         // TelephonyManager をモックしてコールバックの処理を差し替える
         val telephonyManager = mockk<TelephonyManager>()
+        every { telephonyManager.networkOperatorName }.returns("DOCOMO")
         every { telephonyManager.createForSubscriptionId(any()) }.returns(telephonyManager)
         every { telephonyManager.unregisterTelephonyCallback(any()) }.returns(Unit)
         every { telephonyManager.dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
@@ -188,6 +198,7 @@ class NetworkCallbackToolTest {
         // Android 12 以上で
         mockkObject(NetworkCallbackTool)
         every { NetworkCallbackTool.getProperty("isAndroidSAndLater") }.returns(true)
+        coEvery { NetworkCallbackTool.invoke("requestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(Unit)
 
         // 返り値をモックする
         val cellIdentityLte = mockk<CellIdentityLte>()
@@ -203,6 +214,7 @@ class NetworkCallbackToolTest {
 
         // TelephonyManager をモックしてコールバックの処理を差し替える
         val telephonyManager = mockk<TelephonyManager>()
+        every { telephonyManager.networkOperatorName }.returns("DOCOMO")
         every { telephonyManager.createForSubscriptionId(any()) }.returns(telephonyManager)
         every { telephonyManager.unregisterTelephonyCallback(any()) }.returns(Unit)
         // CellInfoNr がコールバックで返るように
@@ -230,6 +242,7 @@ class NetworkCallbackToolTest {
         // Android 12 以上で
         mockkObject(NetworkCallbackTool)
         every { NetworkCallbackTool.getProperty("isAndroidSAndLater") }.returns(true)
+        coEvery { NetworkCallbackTool.invoke("requestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(Unit)
 
         // 返り値をモックする
         val cellIdentityNr = mockk<CellIdentityNr>()
@@ -246,6 +259,7 @@ class NetworkCallbackToolTest {
 
         // TelephonyManager をモックしてコールバックの処理を差し替える
         val telephonyManager = mockk<TelephonyManager>()
+        every { telephonyManager.networkOperatorName }.returns("DOCOMO")
         every { telephonyManager.createForSubscriptionId(any()) }.returns(telephonyManager)
         every { telephonyManager.unregisterTelephonyCallback(any()) }.returns(Unit)
         every { telephonyManager.dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
@@ -276,6 +290,7 @@ class NetworkCallbackToolTest {
         // Android 12 以上で
         mockkObject(NetworkCallbackTool)
         every { NetworkCallbackTool.getProperty("isAndroidSAndLater") }.returns(true)
+        coEvery { NetworkCallbackTool.invoke("requestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(Unit)
 
         // 返り値をモックする
         val cellIdentityNr = mockk<CellIdentityNr>()
@@ -292,6 +307,7 @@ class NetworkCallbackToolTest {
 
         // TelephonyManager をモックしてコールバックの処理を差し替える
         val telephonyManager = mockk<TelephonyManager>()
+        every { telephonyManager.networkOperatorName }.returns("DOCOMO")
         every { telephonyManager.createForSubscriptionId(any()) }.returns(telephonyManager)
         every { telephonyManager.unregisterTelephonyCallback(any()) }.returns(Unit)
         every { telephonyManager.dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_NR)
@@ -322,6 +338,7 @@ class NetworkCallbackToolTest {
         // Android 11 以下で
         mockkObject(NetworkCallbackTool)
         every { NetworkCallbackTool.getProperty("isAndroidSAndLater") }.returns(false)
+        coEvery { NetworkCallbackTool.invoke("requestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(Unit)
 
         // 返り値をモックする
         val cellIdentityNr = mockk<CellIdentityLte>()
@@ -336,6 +353,7 @@ class NetworkCallbackToolTest {
 
         // TelephonyManager をモックしてコールバックの処理を差し替える
         val telephonyManager = mockk<TelephonyManager>()
+        every { telephonyManager.networkOperatorName }.returns("DOCOMO")
         every { telephonyManager.createForSubscriptionId(any()) }.returns(telephonyManager)
         every { telephonyManager.listen(any(), eq(PhoneStateListener.LISTEN_NONE)) }.returns(Unit)
         every { telephonyManager.dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
@@ -365,6 +383,7 @@ class NetworkCallbackToolTest {
         // Android 11 以下で
         mockkObject(NetworkCallbackTool)
         every { NetworkCallbackTool.getProperty("isAndroidSAndLater") }.returns(false)
+        coEvery { NetworkCallbackTool.invoke("requestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(Unit)
 
         // 返り値をモックする
         val cellIdentityNr = mockk<CellIdentityLte>()
@@ -380,6 +399,7 @@ class NetworkCallbackToolTest {
 
         // TelephonyManager をモックしてコールバックの処理を差し替える
         val telephonyManager = mockk<TelephonyManager>()
+        every { telephonyManager.networkOperatorName }.returns("DOCOMO")
         every { telephonyManager.createForSubscriptionId(any()) }.returns(telephonyManager)
         every { telephonyManager.listen(any(), eq(PhoneStateListener.LISTEN_NONE)) }.returns(Unit)
         every { telephonyManager.dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
