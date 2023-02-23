@@ -2,10 +2,15 @@ package io.github.takusan23.newradiosupporter.tool
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.telephony.*
 import io.github.takusan23.newradiosupporter.tool.data.BandData
+import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
 import io.github.takusan23.newradiosupporter.tool.data.NetworkStatusData
+import io.github.takusan23.newradiosupporter.tool.data.NrStandAloneType
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
@@ -15,6 +20,10 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 object NetworkStatusFlow {
+
+    /** Android 12 以上かどうか */
+    private val isAndroidSAndLater: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     /** [collectNetworkStatus]の間隔 */
     private const val DELAY_MS = 3_000L
@@ -65,7 +74,7 @@ object NetworkStatusFlow {
 
             // CellInfo の取得を行う
             // 接続中の NRARFCN とかを取得するために必要
-            val cellInfoList = waitRequestCellInfoUpdate(telephonyManager, context)
+            val cellInfoList = waitRequestCellInfoUpdate(context, telephonyManager)
             // CellInfoNrを探して、もしない場合は 4G にする
             // Qualcomm Snapdragon 端末 と Google Tensor 端末 で挙動が違う
             // Google Tensor の場合は配列の最初に CellInfoNr があるみたい。
@@ -82,18 +91,18 @@ object NetworkStatusFlow {
                 !bandData.isNR -> when {
                     // SignalStrengthNr が取得できたら 5Gかもしれない 判定
                     // CellInfoNr は取れないけど、電波強度だけ取れた場合は もしかして5G を表示する
-                    hasSignalStrengthNr -> FinalNRType.MAYBE_NR
+                    hasSignalStrengthNr -> FinalNrType.MAYBE_NR
                     // アンカーバンド接続中 なら 4G 判定
-                    ratType == NetworkType.NR_SUB6 -> FinalNRType.ANCHOR_BAND
+                    ratType == NetworkType.NR_SUB6 -> FinalNrType.ANCHOR_BAND
                     // 多分 4G
-                    else -> FinalNRType.LTE
+                    else -> FinalNrType.LTE
                 }
                 // 転用5G
-                BandDictionary.isLteFrequency(bandData.earfcn) -> FinalNRType.NR_LTE_FREQUENCY
+                BandDictionary.isLteFrequency(bandData.earfcn) -> FinalNrType.NR_LTE_FREQUENCY
                 // ミリ波
-                BandDictionary.isMmWave(bandData.earfcn) -> FinalNRType.NR_MMW
+                BandDictionary.isMmWave(bandData.earfcn) -> FinalNrType.NR_MMW
                 // ミリ波以外 なら Sub6判定
-                else -> FinalNRType.NR_SUB6
+                else -> FinalNrType.NR_SUB6
             }
 
             NetworkStatusData(simSlotIndex, bandData, nrType, nrStandAloneType)
@@ -111,7 +120,7 @@ object NetworkStatusFlow {
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (isAndroidSAndLater) {
             val callback = object : TelephonyCallback(), TelephonyCallback.DisplayInfoListener, NullableCellInfoListener, TelephonyCallback.SignalStrengthsListener {
                 override fun onSignalStrengthsChanged(signalStrength: SignalStrength) {
                     launch { trySend(getNetworkStatusData()) }
@@ -155,7 +164,7 @@ object NetworkStatusFlow {
 
     /** SIMカードの枚数分だけ subscriptionId を返す。 */
     @SuppressLint("MissingPermission")
-    fun listenMultipleSimNetworkStatus(context: Context) = callbackFlow {
+    fun collectMultipleSimSubscriptionIdList(context: Context) = callbackFlow {
         val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
         if (PermissionCheckTool.isGranted(context)) {
             // 多分 SubscriptionInfo が更新されたら呼び出される
@@ -176,6 +185,26 @@ object NetworkStatusFlow {
     }
 
     /**
+     * 定額制、従量制をコールバックで受け取れるらしいんだけど動いてなくね？
+     *
+     * @return 無制限プラン、もしくは家のWi-Fi等定額制ネットワークの場合はtrueを返す
+     */
+    fun collectUnlimitedNetwork(context: Context) = callbackFlow {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+                super.onCapabilitiesChanged(network, networkCapabilities)
+                // 無制限プランを契約している場合はtrue
+                val isUnlimited = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) ||
+                        networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_TEMPORARILY_NOT_METERED)
+                trySend(isUnlimited)
+            }
+        }
+        connectivityManager.registerDefaultNetworkCallback(callback)
+        awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
+    }
+
+    /**
      * データ通信に設定されたSIMカードのスロット番号を取得する。
      *
      * @return データ通信に利用しているSIM。選択されていない場合は null を返す
@@ -193,7 +222,7 @@ object NetworkStatusFlow {
 
     /** [TelephonyManager.requestCellInfoUpdate]を叩く。更新しないと古いのが残ってしまうらしい。非同期なので終わるまで一時停止します */
     @SuppressLint("MissingPermission")
-    private suspend fun waitRequestCellInfoUpdate(telephonyManager: TelephonyManager, context: Context) = suspendCoroutine<List<CellInfo>> { continuation ->
+    private suspend fun waitRequestCellInfoUpdate(context: Context, telephonyManager: TelephonyManager) = suspendCoroutine<List<CellInfo>> { continuation ->
         telephonyManager.requestCellInfoUpdate(context.mainExecutor, object : TelephonyManager.CellInfoCallback() {
             override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
                 continuation.resume(cellInfo)
@@ -275,6 +304,25 @@ object NetworkStatusFlow {
                         || telephonyDisplayInfo.overrideNetworkType == TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA) -> NrStandAloneType.NON_STAND_ALONE
         // 5Gじゃない
         else -> NrStandAloneType.ERROR
+    }
+
+
+    /** ネットワークの種類 */
+    private enum class NetworkType {
+        /** 特になし。getNetworkType()を利用してね */
+        NONE,
+
+        /** LTE-Advancedが有効（CAと何が違うの？） */
+        LTE_ADVANCED,
+
+        /** キャリアアグリゲーションが有効 */
+        LTE_CA,
+
+        /** 5GのSub6ネットワークか、アンカーバンド圏内の場合 */
+        NR_SUB6,
+
+        /** ミリ波 ネットワーク もしくは キャリアアグリゲーション（CA）等より速い手段が提供されている場合 */
+        NR_MMW,
     }
 
 }

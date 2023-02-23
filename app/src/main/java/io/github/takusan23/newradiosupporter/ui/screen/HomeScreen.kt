@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.takusan23.newradiosupporter.BackgroundNRSupporter
 import io.github.takusan23.newradiosupporter.R
-import io.github.takusan23.newradiosupporter.tool.NetworkCallbackTool
 import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
 import io.github.takusan23.newradiosupporter.tool.SettingIntentTool
 import io.github.takusan23.newradiosupporter.ui.component.*
@@ -35,8 +34,8 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     // Flowで収集する
-    val isUnlimitedNetwork = remember { NetworkCallbackTool.listenUnlimitedNetwork(context) }.collectAsStateWithLifecycle(initialValue = null)
-    val multipleSimSubscriptionIdList = remember { NetworkStatusFlow.listenMultipleSimNetworkStatus(context) }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val isUnlimitedNetwork = remember { NetworkStatusFlow.collectUnlimitedNetwork(context) }.collectAsStateWithLifecycle(initialValue = null)
+    val multipleSimSubscriptionIdList = remember { NetworkStatusFlow.collectMultipleSimSubscriptionIdList(context) }.collectAsStateWithLifecycle(initialValue = emptyList())
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -60,7 +59,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                 val isExpanded = remember { mutableStateOf(false) }
                 // 初期値はデータ通信に設定されたSIMカードのスロット番号
                 LaunchedEffect(key1 = status.value?.simSlotIndex) {
-                    isExpanded.value = status.value?.simSlotIndex == NetworkCallbackTool.getDataUsageSimSlotIndex(context)
+                    isExpanded.value = status.value?.simSlotIndex == NetworkStatusFlow.getDataUsageSimSlotIndex(context)
                 }
                 if (status.value != null) {
                     Card(

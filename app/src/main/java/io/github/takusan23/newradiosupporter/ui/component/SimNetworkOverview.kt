@@ -13,9 +13,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.takusan23.newradiosupporter.R
-import io.github.takusan23.newradiosupporter.tool.FinalNRType
-import io.github.takusan23.newradiosupporter.tool.NrStandAloneType
 import io.github.takusan23.newradiosupporter.tool.data.BandData
+import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
+import io.github.takusan23.newradiosupporter.tool.data.NrStandAloneType
 
 /**
  * 回線状態を表示するやつ。未展開時
@@ -27,7 +27,7 @@ fun SimNetworkOverview(
     modifier: Modifier = Modifier,
     simIndex: Int,
     bandData: BandData,
-    finalNRType: FinalNRType,
+    finalNRType: FinalNrType,
     nrStandAloneType: NrStandAloneType,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -59,11 +59,11 @@ fun SimNetworkOverview(
                 Icon(
                     modifier = Modifier.size(40.dp),
                     painter = painterResource(id = when (finalNRType) {
-                        FinalNRType.ANCHOR_BAND -> R.drawable.ic_android_anchor_lte_band
-                        FinalNRType.NR_LTE_FREQUENCY -> R.drawable.android_nr_lte_freq_nr
-                        FinalNRType.NR_SUB6 -> R.drawable.ic_android_nr_sub6
-                        FinalNRType.NR_MMW -> R.drawable.ic_android_nr_mmw
-                        FinalNRType.LTE -> R.drawable.ic_android_lte
+                        FinalNrType.ANCHOR_BAND -> R.drawable.ic_android_anchor_lte_band
+                        FinalNrType.NR_LTE_FREQUENCY -> R.drawable.android_nr_lte_freq_nr
+                        FinalNrType.NR_SUB6 -> R.drawable.ic_android_nr_sub6
+                        FinalNrType.NR_MMW -> R.drawable.ic_android_nr_mmw
+                        FinalNrType.LTE -> R.drawable.ic_android_lte
                         else -> R.drawable.ic_outline_info_24
                     }),
                     contentDescription = null

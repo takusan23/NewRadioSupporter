@@ -12,9 +12,9 @@ import android.os.IBinder
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import io.github.takusan23.newradiosupporter.tool.FinalNRType
-import io.github.takusan23.newradiosupporter.tool.NetworkCallbackTool
+import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
 import io.github.takusan23.newradiosupporter.tool.data.BandData
+import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -52,12 +52,12 @@ class BackgroundNRSupporter : Service() {
         })
         // デュアルSIMに対応させる
         // Flow で監視
-        NetworkCallbackTool.listenMultipleSimNetworkStatus(this).onEach { statusFlowList ->
+        NetworkStatusFlow.collectMultipleSimSubscriptionIdList(this).onEach { subscriptionId ->
             // 監視してたFlowをキャンセル
             statusCollectFlowJobList.forEach { it.cancel() }
             // SIMの枚数だけ監視する
-            statusFlowList.forEachIndexed { index, flow ->
-                statusCollectFlowJobList += flow.filterNotNull().onEach { (_, band, type, _) ->
+            subscriptionId.forEachIndexed { index, flow ->
+                statusCollectFlowJobList += NetworkStatusFlow.collectNetworkStatus(this).filterNotNull().onEach { (_, band, type, _) ->
                     val notification = showNotification(band, type)
                     if (index == 0) {
                         // 1枚目のSIMはフォアグラウンドサービス通知のために出す
@@ -83,7 +83,7 @@ class BackgroundNRSupporter : Service() {
     }
 
     /** 通知を組み立てて、返す */
-    private fun showNotification(bandData: BandData?, finalNRType: FinalNRType?): Notification {
+    private fun showNotification(bandData: BandData?, finalNRType: FinalNrType?): Notification {
         val channelId = "io.github.takusan23.newradiosupporter.NR_SERVICE_NOTIFICATION"
         val channel = NotificationChannelCompat.Builder(channelId, NotificationManagerCompat.IMPORTANCE_LOW).apply {
             setName("バックグラウンド5G通知")
@@ -93,11 +93,11 @@ class BackgroundNRSupporter : Service() {
         }
         return NotificationCompat.Builder(this, channelId).apply {
             val networkType = when (finalNRType) {
-                FinalNRType.ANCHOR_BAND -> getString(R.string.type_lte_anchor_band)
-                FinalNRType.NR_LTE_FREQUENCY -> getString(R.string.type_lte_freq_nr)
-                FinalNRType.NR_SUB6 -> getString(R.string.type_nr_sub6)
-                FinalNRType.NR_MMW -> getString(R.string.type_nr_mmwave)
-                FinalNRType.LTE -> getString(R.string.type_lte)
+                FinalNrType.ANCHOR_BAND -> getString(R.string.type_lte_anchor_band)
+                FinalNrType.NR_LTE_FREQUENCY -> getString(R.string.type_lte_freq_nr)
+                FinalNrType.NR_SUB6 -> getString(R.string.type_nr_sub6)
+                FinalNrType.NR_MMW -> getString(R.string.type_nr_mmwave)
+                FinalNrType.LTE -> getString(R.string.type_lte)
                 else -> getString(R.string.loading)
             }
             val bandText = if (bandData != null) {
@@ -105,14 +105,16 @@ class BackgroundNRSupporter : Service() {
             } else getString(R.string.loading)
             setContentTitle(bandData?.carrierName)
             setContentText("$networkType\n$bandText")
-            setSmallIcon(when (finalNRType) {
-                FinalNRType.ANCHOR_BAND -> R.drawable.ic_android_anchor_lte_band
-                FinalNRType.NR_LTE_FREQUENCY -> R.drawable.android_nr_lte_freq_nr
-                FinalNRType.NR_SUB6 -> R.drawable.ic_android_nr_sub6
-                FinalNRType.NR_MMW -> R.drawable.ic_android_nr_mmw
-                FinalNRType.LTE -> R.drawable.ic_android_lte
-                else -> R.drawable.ic_outline_error_outline_24
-            })
+            setSmallIcon(
+                when (finalNRType) {
+                    FinalNrType.ANCHOR_BAND -> R.drawable.ic_android_anchor_lte_band
+                    FinalNrType.NR_LTE_FREQUENCY -> R.drawable.android_nr_lte_freq_nr
+                    FinalNrType.NR_SUB6 -> R.drawable.ic_android_nr_sub6
+                    FinalNrType.NR_MMW -> R.drawable.ic_android_nr_mmw
+                    FinalNrType.LTE -> R.drawable.ic_android_lte
+                    else -> R.drawable.ic_outline_error_outline_24
+                }
+            )
             // 通知押したとき
             setContentIntent(PendingIntent.getActivity(this@BackgroundNRSupporter, 1, Intent(this@BackgroundNRSupporter, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE))
             // 展開時に文字を多く表示させる
