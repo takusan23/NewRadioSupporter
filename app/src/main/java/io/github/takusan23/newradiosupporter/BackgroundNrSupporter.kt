@@ -15,10 +15,7 @@ import androidx.core.app.NotificationManagerCompat
 import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
 import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -26,9 +23,9 @@ import kotlinx.coroutines.flow.onEach
 /**
  * バックグラウンド5G監視サービス
  * */
-class BackgroundNRSupporter : Service() {
+class BackgroundNrSupporter : Service() {
     /** SIMカードを監視するスコープ */
-    private val scope = CoroutineScope(Job() + Dispatchers.Main)
+    private val scope = MainScope()
 
     /** 回線を監視するFlow。キャンセル用 */
     private val statusCollectFlowJobList = mutableListOf<Job>()
@@ -52,12 +49,12 @@ class BackgroundNRSupporter : Service() {
         })
         // デュアルSIMに対応させる
         // Flow で監視
-        NetworkStatusFlow.collectMultipleSimSubscriptionIdList(this).onEach { subscriptionId ->
+        NetworkStatusFlow.collectMultipleSimSubscriptionIdList(this).onEach { subscriptionIdList ->
             // 監視してたFlowをキャンセル
             statusCollectFlowJobList.forEach { it.cancel() }
             // SIMの枚数だけ監視する
-            subscriptionId.forEachIndexed { index, flow ->
-                statusCollectFlowJobList += NetworkStatusFlow.collectNetworkStatus(this).filterNotNull().onEach { (_, band, type, _) ->
+            subscriptionIdList.forEachIndexed { index, subscriptionId ->
+                statusCollectFlowJobList += NetworkStatusFlow.collectNetworkStatus(this, subscriptionId).filterNotNull().onEach { (_, band, type, _) ->
                     val notification = showNotification(band, type)
                     if (index == 0) {
                         // 1枚目のSIMはフォアグラウンドサービス通知のために出す
@@ -116,11 +113,11 @@ class BackgroundNRSupporter : Service() {
                 }
             )
             // 通知押したとき
-            setContentIntent(PendingIntent.getActivity(this@BackgroundNRSupporter, 1, Intent(this@BackgroundNRSupporter, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE))
+            setContentIntent(PendingIntent.getActivity(this@BackgroundNrSupporter, 1, Intent(this@BackgroundNrSupporter, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE))
             // 展開時に文字を多く表示させる
             setStyle(NotificationCompat.BigTextStyle().bigText("$networkType\n$bandText"))
             // 終了ボタン
-            addAction(R.drawable.ic_outline_close_24, "終了", PendingIntent.getBroadcast(this@BackgroundNRSupporter, 1, Intent(STOP_SERVICE_BROADCAST), PendingIntent.FLAG_IMMUTABLE))
+            addAction(R.drawable.ic_outline_close_24, "終了", PendingIntent.getBroadcast(this@BackgroundNrSupporter, 1, Intent(STOP_SERVICE_BROADCAST), PendingIntent.FLAG_IMMUTABLE))
         }.build().apply {
             // 消せないように。サービス終了時に消える
             flags = NotificationCompat.FLAG_NO_CLEAR
@@ -142,12 +139,12 @@ class BackgroundNRSupporter : Service() {
 
         /** サービス起動 */
         fun startService(context: Context) {
-            context.startForegroundService(Intent(context, BackgroundNRSupporter::class.java))
+            context.startForegroundService(Intent(context, BackgroundNrSupporter::class.java))
         }
 
         /** サービス終了 */
         fun stopService(context: Context) {
-            context.stopService(Intent(context, BackgroundNRSupporter::class.java))
+            context.stopService(Intent(context, BackgroundNrSupporter::class.java))
         }
 
     }

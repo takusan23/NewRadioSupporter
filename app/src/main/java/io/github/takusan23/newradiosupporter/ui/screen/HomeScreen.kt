@@ -12,7 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.takusan23.newradiosupporter.BackgroundNRSupporter
+import io.github.takusan23.newradiosupporter.BackgroundNrSupporter
 import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
 import io.github.takusan23.newradiosupporter.tool.SettingIntentTool
@@ -104,10 +104,10 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             }
             item {
                 BackgroundServiceItem(modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp)) {
-                    if (BackgroundNRSupporter.isServiceRunning(context)) {
-                        BackgroundNRSupporter.stopService(context)
+                    if (BackgroundNrSupporter.isServiceRunning(context)) {
+                        BackgroundNrSupporter.stopService(context)
                     } else {
-                        BackgroundNRSupporter.startService(context)
+                        BackgroundNrSupporter.startService(context)
                     }
                 }
             }

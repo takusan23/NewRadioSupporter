@@ -18,7 +18,7 @@
         android:theme="@style/Theme.NewRadioSupporter">
 
         <service
-            android:name=".BackgroundNRSupporter"
+            android:name=".BackgroundNrSupporter"
             android:enabled="true"
             android:exported="false" />
 
