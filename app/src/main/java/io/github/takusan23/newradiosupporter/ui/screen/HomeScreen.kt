@@ -15,6 +15,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.takusan23.newradiosupporter.BackgroundNRSupporter
 import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.tool.NetworkCallbackTool
+import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
 import io.github.takusan23.newradiosupporter.tool.SettingIntentTool
 import io.github.takusan23.newradiosupporter.ui.component.*
 
@@ -35,7 +36,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
 
     // Flowで収集する
     val isUnlimitedNetwork = remember { NetworkCallbackTool.listenUnlimitedNetwork(context) }.collectAsStateWithLifecycle(initialValue = null)
-    val multipleNetworkStatusList = remember { NetworkCallbackTool.listenMultipleSimNetworkStatus(context) }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val multipleSimSubscriptionIdList = remember { NetworkStatusFlow.listenMultipleSimNetworkStatus(context) }.collectAsStateWithLifecycle(initialValue = emptyList())
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -53,15 +54,14 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // SIMカードの数だけ Flow を監視する
-            itemsIndexed(multipleNetworkStatusList.value) { _, statusFlow ->
-                val status = statusFlow.collectAsStateWithLifecycle(initialValue = null)
+            itemsIndexed(multipleSimSubscriptionIdList.value) { _, subscriptionId ->
+                val status = remember { NetworkStatusFlow.collectNetworkStatus(context, subscriptionId) }.collectAsStateWithLifecycle(initialValue = null)
                 // 押したら展開できるようにするため
                 val isExpanded = remember { mutableStateOf(false) }
                 // 初期値はデータ通信に設定されたSIMカードのスロット番号
                 LaunchedEffect(key1 = status.value?.simSlotIndex) {
                     isExpanded.value = status.value?.simSlotIndex == NetworkCallbackTool.getDataUsageSimSlotIndex(context)
                 }
-
                 if (status.value != null) {
                     Card(
                         modifier = Modifier.padding(top = 20.dp, start = 20.dp, end = 20.dp),
