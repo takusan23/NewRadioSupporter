@@ -16,6 +16,7 @@ import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
 import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -54,16 +55,19 @@ class BackgroundNrSupporter : Service() {
             statusCollectFlowJobList.forEach { it.cancel() }
             // SIMの枚数だけ監視する
             subscriptionIdList.forEachIndexed { index, subscriptionId ->
-                statusCollectFlowJobList += NetworkStatusFlow.collectNetworkStatus(this, subscriptionId).filterNotNull().onEach { (_, band, type, _) ->
-                    val notification = showNotification(band, type)
-                    if (index == 0) {
-                        // 1枚目のSIMはフォアグラウンドサービス通知のために出す
-                        startForeground(NOTIFICATION_ID, notification)
-                    } else {
-                        // 2枚目は通知として出す
-                        notificationManagerCompat.notify(NOTIFICATION_ID + index, notification)
-                    }
-                }.launchIn(scope)
+                statusCollectFlowJobList += NetworkStatusFlow.collectNetworkStatus(this, subscriptionId)
+                    .filterNotNull()
+                    .distinctUntilChanged()
+                    .onEach { (_, band, type, _) ->
+                        val notification = showNotification(band, type)
+                        if (index == 0) {
+                            // 1枚目のSIMはフォアグラウンドサービス通知のために出す
+                            startForeground(NOTIFICATION_ID, notification)
+                        } else {
+                            // 2枚目は通知として出す
+                            notificationManagerCompat.notify(NOTIFICATION_ID + index, notification)
+                        }
+                    }.launchIn(scope)
             }
         }.launchIn(scope)
     }
