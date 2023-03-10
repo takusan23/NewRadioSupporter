@@ -6,6 +6,9 @@ object NavigationLinkList {
     /** 権限下さい画面 */
     const val PermissionScreen = "permission_screen"
 
+    /** 権限下さい画面 Shizuku API */
+    const val ShizukuPermissionScreen = "permission_screen_shizuku"
+
     /** ホーム画面 */
     const val HomeScreen = "home_screen"
 

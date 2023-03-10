@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import io.github.takusan23.newradiosupporter.ui.screen.NewRadioSupporterMainScreen
+import org.lsposed.hiddenapibypass.HiddenApiBypass
 
 class MainActivity : ComponentActivity() {
 
@@ -13,6 +14,9 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        HiddenApiBypass.addHiddenApiExemptions("")
+
         setContent { NewRadioSupporterMainScreen() }
     }
 
