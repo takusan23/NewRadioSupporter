@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">NewRadioSupporter</string>
+    <string name="app_name">NewRadioSupporter-SU</string>
     <string name="request_permission">権限が必要なので許可して下さい。 位置情報、発信の権限は端末の電波状態へアクセスする目的に利用します。</string>
     <string name="request_permission_button">権限を付与</string>
     <string name="setting">設定</string>

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">NewRadioSupporter</string>
+    <string name="app_name">NewRadioSupporter-SU</string>
     <string name="request_permission">Please allow it because you need permission. Location information and transmission authority are used for the purpose of accessing the radio wave condition of the terminal.</string>
     <string name="request_permission_button">Grant authority</string>
     <string name="setting">Setting</string>

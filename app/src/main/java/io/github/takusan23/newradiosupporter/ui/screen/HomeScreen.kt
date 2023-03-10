@@ -2,6 +2,7 @@ package io.github.takusan23.newradiosupporter.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -95,6 +96,42 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                     }
 
                 }
+                item {
+                    Divider(
+                        modifier = Modifier.fillMaxWidth(0.5f)
+                    )
+                }
+
+                /*
+                                // 物理チャンネル構成
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                    itemsIndexed(multipleSimSubscriptionIdList.value) { _, subscriptionId ->
+                                        val pairCellList = remember {
+                                            ShizukuTool
+                                                .collectPhysicalChannelConfigDataList(context, subscriptionId)
+                                                .map { list ->
+                                                    val primaryCell = list.filter { data -> data.cellType == PhysicalChannelConfigData.CellType.PRIMARY }
+                                                    val secondaryCell = list.filter { data -> data.cellType == PhysicalChannelConfigData.CellType.SECONDARY }
+                                                    primaryCell to secondaryCell
+                                                }
+                                        }.collectAsStateWithLifecycle(initialValue = null)
+
+                                        // データが取れた場合
+                                        pairCellList.value?.also { (primaryCell, secondaryCell) ->
+                                            SuperUserInfoCard(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(start = 20.dp, end = 20.dp),
+                                                simIndex = primaryCell.firstOrNull()?.simSlotIndex ?: 1,
+                                                carrierName = primaryCell.firstOrNull()?.bandData?.carrierName ?: "",
+                                                primaryCell = primaryCell,
+                                                secondaryCellList = secondaryCell
+                                            )
+                                        }
+                                    }
+                                }
+                */
+
                 item {
                     if (isUnlimitedNetwork.value != null) {
                         UnlimitedInfo(
