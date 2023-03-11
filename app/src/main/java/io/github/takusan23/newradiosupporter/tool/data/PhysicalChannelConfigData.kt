@@ -5,7 +5,7 @@ data class PhysicalChannelConfigData(
     val cellType: CellType,
     val bandWidthMHz: Float, // MHz
     val networkType: NetworkType,
-    val bandData: BandData
+    val bandData: BandData?
 ) {
 
     enum class CellType {

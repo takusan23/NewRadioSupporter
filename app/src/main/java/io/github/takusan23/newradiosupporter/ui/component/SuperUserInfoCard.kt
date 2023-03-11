@@ -33,7 +33,7 @@ fun SuperUserInfoCard(
     val isExpanded = remember { mutableStateOf(true) }
 
     val carrierAggregationBandList = remember(primaryCell, secondaryCellList) {
-        (primaryCell.map { it.bandData.band } + secondaryCellList.map { it.bandData.band })
+        (primaryCell.map { it.bandData?.band } + secondaryCellList.map { it.bandData?.band }).filterNotNull()
     }
 
     Card(
@@ -140,14 +140,13 @@ private fun SuperUserCellInfoItem(
                     PhysicalChannelConfigData.NetworkType.NR -> "5G"
                     PhysicalChannelConfigData.NetworkType.LTE -> "4G"
                     PhysicalChannelConfigData.NetworkType.LTE_CA -> "4G CA"
-                    else -> "不明"
                 }
                 Text(
                     modifier = Modifier.padding(bottom = 5.dp),
                     text = """
                     $cellType ($networkType)
-                    バンド : ${config.bandData.band} | 周波数 : ${config.bandData.frequencyMHz ?: -1} MHz
-                    NRARFCN (EARFCN) : ${config.bandData.earfcn}
+                    バンド : ${config.bandData?.band} | 周波数 : ${config.bandData?.frequencyMHz ?: -1} MHz
+                    NRARFCN (EARFCN) : ${config.bandData?.earfcn}
                 """.trimIndent()
                 )
             }
