@@ -56,16 +56,14 @@ object ShizukuTool {
 
             // PhysicalChannelConfig の PhysicalCellId は UID がシステムアプリでないと取得できないようになっていた、
             // ほしいのは EARFCN で、重複を消したらおそらく順番通り入っているのでそのままつかう
-            val bandList = cellInfoList.map { BandData.convertBandData(it, carrierName) }.distinctBy { it?.band }.filterNotNull()
+            val nrBandList = cellInfoList.filterIsInstance<CellInfoNr>().map {
+                BandData.convertBandData(it, carrierName)
+            }.distinctBy { it?.band }.filterNotNull()
+            val lteBandList = cellInfoList.filterIsInstance<CellInfoLte>().map {
+                BandData.convertBandData(it, carrierName)
+            }.distinctBy { it?.band }.filterNotNull()
 
-            // 同じ数だけない場合は return
-            if (bandList.size != physicalChannelConfigList.size) {
-                return
-            }
-
-
-            // PhysicalChannelConfigData を作る
-            val result = physicalChannelConfigList.mapIndexed { index, physicalChannelConfig ->
+            val nrPhysicalList = physicalChannelConfigList.filter { it.networkType == TelephonyManager.NETWORK_TYPE_NR }.mapIndexed { index, physicalChannelConfig ->
                 val cellType = when (physicalChannelConfig.connectionStatus) {
                     PhysicalChannelConfig.CONNECTION_PRIMARY_SERVING -> PhysicalChannelConfigData.CellType.PRIMARY
                     PhysicalChannelConfig.CONNECTION_SECONDARY_SERVING -> PhysicalChannelConfigData.CellType.SECONDARY
@@ -82,10 +80,34 @@ object ShizukuTool {
                     cellType = cellType,
                     bandWidthMHz = physicalChannelConfig.cellBandwidthDownlinkKhz / 1000f,
                     networkType = networkType,
-                    bandData = bandList[index]
+                    bandData = nrBandList.getOrNull(index)
                 )
             }
-            trySend(result)
+
+            val ltePhysicalList = physicalChannelConfigList.filter {
+                it.networkType == TelephonyManager.NETWORK_TYPE_LTE_CA || it.networkType == TelephonyManager.NETWORK_TYPE_LTE
+            }.mapIndexed { index, physicalChannelConfig ->
+                val cellType = when (physicalChannelConfig.connectionStatus) {
+                    PhysicalChannelConfig.CONNECTION_PRIMARY_SERVING -> PhysicalChannelConfigData.CellType.PRIMARY
+                    PhysicalChannelConfig.CONNECTION_SECONDARY_SERVING -> PhysicalChannelConfigData.CellType.SECONDARY
+                    else -> PhysicalChannelConfigData.CellType.ERROR
+                }
+                val networkType = when (physicalChannelConfig.networkType) {
+                    TelephonyManager.NETWORK_TYPE_LTE -> PhysicalChannelConfigData.NetworkType.LTE
+                    TelephonyManager.NETWORK_TYPE_LTE_CA -> PhysicalChannelConfigData.NetworkType.LTE_CA
+                    TelephonyManager.NETWORK_TYPE_NR -> PhysicalChannelConfigData.NetworkType.NR
+                    else -> PhysicalChannelConfigData.NetworkType.LTE
+                }
+                PhysicalChannelConfigData(
+                    simSlotIndex = simSlotIndex,
+                    cellType = cellType,
+                    bandWidthMHz = physicalChannelConfig.cellBandwidthDownlinkKhz / 1000f,
+                    networkType = networkType,
+                    bandData = lteBandList.getOrNull(index)
+                )
+            }
+
+            trySend(nrPhysicalList + ltePhysicalList)
         }
 
         launch {
