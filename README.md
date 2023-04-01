@@ -49,6 +49,13 @@ https://issuetracker.google.com/issues/253539094
 # 開発者向け
 JetpackComposeでできてます。最新のAndroid Studioで実行できるはずです。
 
+## superuserブランチ
+`Shizuku API`を利用し、`PhysicalChannelConfig`から電波状況を取得してみたものです。
+5Gのプライマリ、セカンダリセルの内訳 や 4Gのキャリアアグリゲーションの内訳 が見れるらしいです。  
+上記のAPIはサードパーティーには公開されていないので、`Shizuku API ( adb or root )`が必要です。
+
+また、ビルドするためには、android.jar の差し替え（ https://github.com/Reginer/aosp-android-jar ）と何故かプロジェクト内の `.idea` を消す必要があります。
+
 ## 実行方法
 `Android Studio`が必要です
 
