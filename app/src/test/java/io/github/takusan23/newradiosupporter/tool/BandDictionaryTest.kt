@@ -22,6 +22,8 @@ class BandDictionaryTest {
         Assert.assertEquals(bandN78, "n78")
         val bandN20 = BandDictionary.toNRBand(159630)
         Assert.assertEquals(bandN20, "n20")
+        val bandList = BandDictionary.toNRBandList(159630)
+        Assert.assertEquals(bandList, listOf("n20", "n28"))
     }
 
     @Test

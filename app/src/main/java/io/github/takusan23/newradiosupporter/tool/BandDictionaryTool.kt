@@ -82,8 +82,10 @@ object BandDictionary {
         BandDictionaryData(5, 173800, 178800),
         BandDictionaryData(7, 524000, 538000),
         BandDictionaryData(8, 185000, 192000),
-        BandDictionaryData(20, 158200, 164200),
+        // n20 よりも先に n28 の確認をします
+        // 700MHz 転用5G は n28
         BandDictionaryData(28, 151600, 160600),
+        BandDictionaryData(20, 158200, 164200),
         BandDictionaryData(38, 514000, 524000),
         BandDictionaryData(41, 499200, 537999),
         BandDictionaryData(50, 286400, 303400),
@@ -106,7 +108,7 @@ object BandDictionary {
     )
 
     /**
-     * 周波数からバンドを出す。LTE版
+     * EARFCNからバンドを出す。LTE版
      *
      * 1850 なら band 3
      * */
@@ -118,17 +120,26 @@ object BandDictionary {
     }
 
     /**
-     * 周波数からバンドを出す。5G版。NRは「New Radio」らしい
+     * NRARFCNからバンドを出す。5G版。NRは「New Radio」らしい
      *
      * n3 とか返ってくると思う
-     *
-     * 実機を持っていないので知らない
      * */
     fun toNRBand(nrarfcn: Int): String {
         return "n" + bandNRList.find { bandDictionaryData ->
             // 範囲内にあれば
             nrarfcn in (bandDictionaryData.dlMin..bandDictionaryData.dlMax)
         }?.bandNum.toString()
+    }
+
+    /**
+     * NRARFCNからバンドを出す。5G版。NRは「New Radio」らしい
+     * 複数のバンドが対象の場合はそれに従う
+     */
+    fun toNRBandList(nrarfcn: Int): List<String> {
+        return bandNRList.filter { bandDictionaryData ->
+            // 範囲内にあれば
+            nrarfcn in (bandDictionaryData.dlMin..bandDictionaryData.dlMax)
+        }.map { "n${it.bandNum}" }
     }
 
     /**

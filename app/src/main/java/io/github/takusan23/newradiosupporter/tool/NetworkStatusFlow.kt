@@ -256,9 +256,13 @@ object NetworkStatusFlow {
         // 5G (NR)
         is CellIdentityNr -> {
             val nrarfcn = cellIdentity.nrarfcn
+            // LTE の場合は EARFCNとバンドの表 はすべて単一の結果になるが、
+            // NR の場合は同じような表を用意しても、複数の結果になる場合がある（n78はn77を内包のような）
+            // なので、まずはシステムから帰ってきた値を優先的に利用し、取得できなかった場合のみ表から探すようにする
+            // が、多分モデムのベンダーはこれを実装していないため、おそらく表から探すハメになる
             BandData(
                 isNR = true,
-                band = BandDictionary.toNRBand(nrarfcn),
+                band = cellIdentity.bands.firstOrNull()?.let { "n${it}" } ?: BandDictionary.toNRBand(nrarfcn),
                 earfcn = nrarfcn,
                 carrierName = carrierName,
                 frequencyMHz = BandDictionary.toFrequencyMHz(nrarfcn),
