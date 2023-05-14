@@ -1,0 +1,35 @@
+name: Run Gradle Test
+
+# 起動条件。pushと手動起動
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    # JDK導入
+    - name: set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        cache: gradle
+
+    # 権限を与える
+    - name: Grant permission gradlew
+      run: chmod +x gradlew
+
+    # テストを実行
+    - name: Run Gradle Test
+      run: ./gradlew testDebugUnitTest
+
+    # レポート
+    - name: Publish Test Report
+      uses: mikepenz/action-junit-report@v3
+      if: success() || failure()
+      with:
+        report_paths: '**/build/test-results/test/TEST-*.xml'
