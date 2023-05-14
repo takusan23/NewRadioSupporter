@@ -25,3 +25,14 @@ https://play.google.com/store/apps/details?id=io.github.takusan23.newradiosuppor
 
 # 開発者向け
 JetpackComposeでできてます。最新のAndroid Studioで実行できるはずです。
+
+## 実行方法
+`Android Studio`が必要です
+
+- このリポジトリをクローンします
+  - `git clone https://github.com/takusan23/NewRadioSupporter`
+  - git がない場合は zip をダウンロードして解凍しても良いかもしれないです
+- Android Studio で開きます
+  - ![Imgur](https://imgur.com/9n2ygdE.png)
+- 暫く待つと、実行ボタンが押せるようになるので押します
+  - ![Imgur](https://imgur.com/O5855id.png)

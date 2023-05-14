@@ -10,6 +10,8 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
@@ -38,6 +40,7 @@ class NetworkStatusFlowTest {
         val cellIdentityNr = mockk<CellIdentityNr>()
         every { cellIdentityNr.nrarfcn }.returns(643334)
         every { cellIdentityNr.operatorAlphaShort }.returns("DOCOMO")
+        every { cellIdentityNr.bands }.returns(intArrayOf())
         val cellInfoNr = mockk<CellInfoNr>()
         every { cellInfoNr.cellIdentity }.returns(cellIdentityNr)
         // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
@@ -84,6 +87,7 @@ class NetworkStatusFlowTest {
         val cellIdentityNr = mockk<CellIdentityNr>()
         every { cellIdentityNr.nrarfcn }.returns(2070015)
         every { cellIdentityNr.operatorAlphaShort }.returns("DOCOMO")
+        every { cellIdentityNr.bands }.returns(intArrayOf())
         val cellInfoNr = mockk<CellInfoNr>()
         every { cellInfoNr.cellIdentity }.returns(cellIdentityNr)
         // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
@@ -130,6 +134,7 @@ class NetworkStatusFlowTest {
         val cellIdentityNr = mockk<CellIdentityNr>()
         every { cellIdentityNr.nrarfcn }.returns(635424)
         every { cellIdentityNr.operatorAlphaShort }.returns("DOCOMO")
+        every { cellIdentityNr.bands }.returns(intArrayOf())
         val cellInfoNr = mockk<CellInfoNr>()
         every { cellInfoNr.cellIdentity }.returns(cellIdentityNr)
         // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
@@ -269,6 +274,7 @@ class NetworkStatusFlowTest {
         val cellIdentityNr = mockk<CellIdentityNr>()
         every { cellIdentityNr.nrarfcn }.returns(643334)
         every { cellIdentityNr.operatorAlphaShort }.returns("DOCOMO")
+        every { cellIdentityNr.bands }.returns(intArrayOf())
         val cellInfoNr = mockk<CellInfoNr>()
         every { cellInfoNr.cellIdentity }.returns(cellIdentityNr)
         // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
@@ -320,6 +326,7 @@ class NetworkStatusFlowTest {
         val cellIdentityNr = mockk<CellIdentityNr>()
         every { cellIdentityNr.nrarfcn }.returns(643334)
         every { cellIdentityNr.operatorAlphaShort }.returns("DOCOMO")
+        every { cellIdentityNr.bands }.returns(intArrayOf())
         val cellInfoNr = mockk<CellInfoNr>()
         every { cellInfoNr.cellIdentity }.returns(cellIdentityNr)
         // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので

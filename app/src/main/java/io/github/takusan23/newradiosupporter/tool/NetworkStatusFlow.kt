@@ -82,6 +82,7 @@ object NetworkStatusFlow {
             // Qualcomm Snapdragon の場合、配列のどっかに CellInfoNr があるみたい。
             // で、 Qualcomm Snapdragon の場合で CellInfoNr が取れない場合がある（ CellSignalStrengthNr だけ取れる。バンドとかは取れないけど5Gの電波強度が取れる？）
             // ない場合は 4G か アンカーバンド？
+            println(cellInfoList.filterIsInstance<CellInfoNr>().firstOrNull()?.let { convertBandData(it, carrierName) })
             val bandData = cellInfoList.filterIsInstance<CellInfoNr>().firstOrNull()?.let { convertBandData(it, carrierName) }
                 ?: cellInfoList.firstOrNull()?.let { convertBandData(it, carrierName) }
                 ?: return@runCatching null // BandData 取れない場合は何もできないので return してしまう
@@ -259,7 +260,7 @@ object NetworkStatusFlow {
                 band = BandDictionary.toLTEBand(earfcn),
                 earfcn = earfcn,
                 frequencyMHz = null,
-                carrierName = carrierName.ifEmpty { cellIdentity.operatorAlphaLong.toString() },
+                carrierName = carrierName.ifEmpty { cellIdentity.operatorAlphaShort.toString() },
             )
         }
         // 5G (NR)
@@ -271,11 +272,11 @@ object NetworkStatusFlow {
             // が、多分モデムのベンダーはこれを実装していないため、おそらく表から探すハメになる
             BandData(
                 isNR = true,
-                band = cellIdentity.bands.firstOrNull()?.let { "n${it}" } ?: BandDictionary.toNRBand(nrarfcn),
+                band = cellIdentity.bands.firstOrNull()?.let { "n$it" } ?: BandDictionary.toNRBand(nrarfcn),
                 earfcn = nrarfcn,
                 frequencyMHz = BandDictionary.toFrequencyMHz(nrarfcn),
                 // キャリア名が空の場合は CellIdentity から取る
-                carrierName = carrierName.ifEmpty { cellIdentity.operatorAlphaLong.toString() },
+                carrierName = carrierName.ifEmpty { cellIdentity.operatorAlphaShort.toString() },
             )
         }
 
