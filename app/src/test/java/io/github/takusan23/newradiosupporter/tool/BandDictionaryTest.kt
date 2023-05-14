@@ -20,10 +20,17 @@ class BandDictionaryTest {
     fun toNRBand_NRARFCNをバンドに変換できる() {
         val bandN78 = BandDictionary.toNRBand(643334)
         Assert.assertEquals(bandN78, "n78")
-        val bandN20 = BandDictionary.toNRBand(159630)
-        Assert.assertEquals(bandN20, "n28")
+        val bandN79 = BandDictionary.toNRBand(703392)
+        Assert.assertEquals(bandN79, "n79")
         val bandList = BandDictionary.toNRBandList(159630)
         Assert.assertEquals(bandList, listOf("n28", "n20"))
+        // 700MHz 転用5G
+        val bandN28Docomo = BandDictionary.toNRBand(157690)
+        Assert.assertEquals(bandN28Docomo, "n28")
+        val bandN28Au = BandDictionary.toNRBand(155600)
+        Assert.assertEquals(bandN28Au, "n28")
+        val bandN28Softbank = BandDictionary.toNRBand(159630)
+        Assert.assertEquals(bandN28Softbank, "n28")
     }
 
     @Test
@@ -48,8 +55,8 @@ class BandDictionaryTest {
 
     @Test
     fun isLteFrequency_NRARFCNから転用5Gかどうかの判定ができる() {
-        val bandN20 = 159600
-        Assert.assertEquals(BandDictionary.isLteFrequency(bandN20), true)
+        val bandN28 = 157690
+        Assert.assertEquals(BandDictionary.isLteFrequency(bandN28), true)
         val bandN78 = 643334
         Assert.assertEquals(BandDictionary.isLteFrequency(bandN78), false)
         val bandN78LteFrequency = 635424
