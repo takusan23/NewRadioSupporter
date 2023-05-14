@@ -36,3 +36,6 @@ JetpackComposeでできてます。最新のAndroid Studioで実行できるは�
   - ![Imgur](https://imgur.com/9n2ygdE.png)
 - 暫く待つと、実行ボタンが押せるようになるので押します
   - ![Imgur](https://imgur.com/O5855id.png)
+
+## そのほか
+`*#*#4636#*#*`で`NR/LTE`にしておくと、SIMカードを抜いても動く？（なんで...）
