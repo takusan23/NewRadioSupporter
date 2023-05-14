@@ -49,7 +49,8 @@ object NetworkStatusFlow {
         val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
 
         // SIMカードのスロット番号
-        val simSlotIndex = subscriptionManager.getActiveSubscriptionInfo(subscriptionId).simSlotIndex
+        // デフォルトの SubscriptionId の場合は null
+        val simSlotIndex = subscriptionManager.getActiveSubscriptionInfo(subscriptionId)?.simSlotIndex ?: 0
         // キャリア名
         val carrierName = telephonyManager.networkOperatorName
         // TelephonyDisplayInfoはコールバックのみの提供なので
@@ -162,7 +163,12 @@ object NetworkStatusFlow {
         }
     }
 
-    /** SIMカードの枚数分だけ subscriptionId を返す。 */
+    /**
+     * SIMカードの枚数分だけ subscriptionId を Flow で返す
+     * もしSIMカードが1枚も刺さっていない場合はデフォルトの subscriptionId を返します
+     *
+     * @see [SubscriptionManager.DEFAULT_SUBSCRIPTION_ID]
+     */
     @SuppressLint("MissingPermission")
     fun collectMultipleSimSubscriptionIdList(context: Context) = callbackFlow {
         val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
@@ -171,7 +177,10 @@ object NetworkStatusFlow {
             val subscriptionInfoCallback = object : SubscriptionManager.OnSubscriptionsChangedListener() {
                 override fun onSubscriptionsChanged() {
                     super.onSubscriptionsChanged()
-                    trySend(subscriptionManager.activeSubscriptionInfoList.map { it.subscriptionId })
+                    val subscriptionIdOrDefaultIdList = subscriptionManager.activeSubscriptionInfoList
+                        .map { it.subscriptionId }
+                        .ifEmpty { listOf(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID) }
+                    trySend(subscriptionIdOrDefaultIdList)
                 }
             }
             subscriptionManager.addOnSubscriptionsChangedListener(context.mainExecutor, subscriptionInfoCallback)
@@ -217,7 +226,7 @@ object NetworkStatusFlow {
             return null
         }
         val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
-        return subscriptionManager.getActiveSubscriptionInfo(dataUsageSubscriptionId).simSlotIndex
+        return subscriptionManager.getActiveSubscriptionInfo(dataUsageSubscriptionId)?.simSlotIndex
     }
 
     /** [TelephonyManager.requestCellInfoUpdate]を叩く。更新しないと古いのが残ってしまうらしい。非同期なので終わるまで一時停止します */
@@ -249,8 +258,8 @@ object NetworkStatusFlow {
                 isNR = false,
                 band = BandDictionary.toLTEBand(earfcn),
                 earfcn = earfcn,
-                carrierName = carrierName,
                 frequencyMHz = null,
+                carrierName = carrierName.ifEmpty { cellIdentity.operatorAlphaLong.toString() },
             )
         }
         // 5G (NR)
@@ -264,10 +273,12 @@ object NetworkStatusFlow {
                 isNR = true,
                 band = cellIdentity.bands.firstOrNull()?.let { "n${it}" } ?: BandDictionary.toNRBand(nrarfcn),
                 earfcn = nrarfcn,
-                carrierName = carrierName,
                 frequencyMHz = BandDictionary.toFrequencyMHz(nrarfcn),
+                // キャリア名が空の場合は CellIdentity から取る
+                carrierName = carrierName.ifEmpty { cellIdentity.operatorAlphaLong.toString() },
             )
         }
+
         else -> null
     }
 

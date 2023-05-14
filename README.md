@@ -15,6 +15,8 @@ https://play.google.com/store/apps/details?id=io.github.takusan23.newradiosuppor
 # 機能
 - Sub-6 / ミリ波 / アンカーバンド の検出
 - 5Gの場合は スタンドアローン方式 / ノンスタンドアローン方式 の表示
+- デュアルSIM 対応
+  - 多分 5G はデータ通信に設定したSIMカードしか拾わない気がします
 - バックグラウンドでも通知領域から確認
 - おまけ程度のバンド表示
     - `n258`とか
