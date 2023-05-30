@@ -7,12 +7,12 @@ package io.github.takusan23.newradiosupporter.tool.data
  * @param band 接続中のバンド番号
  * @param earfcn EARFCN。5GならNRARFCN
  * @param carrierName キャリア名
- * @param frequencyMHz 周波数（MHz）。4Gの場合はnullを返す。
+ * @param frequencyMHz 周波数（MHz）
  */
 data class BandData(
     val isNR: Boolean,
     val band: String,
     val earfcn: Int,
     val carrierName: String,
-    val frequencyMHz: Float?,
+    val frequencyMHz: Float
 )

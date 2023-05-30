@@ -49,7 +49,7 @@ object NetworkStatusFlow {
         val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
 
         // SIMカードのスロット番号
-        // デフォルトの SubscriptionId の場合は null
+        // 一部の端末で null になるっぽい？
         val simSlotIndex = subscriptionManager.getActiveSubscriptionInfo(subscriptionId)?.simSlotIndex ?: 0
         // キャリア名
         val carrierName = telephonyManager.networkOperatorName
@@ -257,9 +257,9 @@ object NetworkStatusFlow {
             val earfcn = cellIdentity.earfcn
             BandData(
                 isNR = false,
-                band = BandDictionary.toLTEBand(earfcn),
+                band = BandDictionary.toLteBand(earfcn),
                 earfcn = earfcn,
-                frequencyMHz = null,
+                frequencyMHz = BandDictionary.toLteFrequencyMhz(earfcn),
                 carrierName = carrierName.ifEmpty { cellIdentity.operatorAlphaShort.toString() },
             )
         }
@@ -272,9 +272,9 @@ object NetworkStatusFlow {
             // が、多分モデムのベンダーはこれを実装していないため、おそらく表から探すハメになる
             BandData(
                 isNR = true,
-                band = cellIdentity.bands.firstOrNull()?.let { "n$it" } ?: BandDictionary.toNRBand(nrarfcn),
+                band = cellIdentity.bands.firstOrNull()?.let { "n$it" } ?: BandDictionary.toNrBand(nrarfcn),
                 earfcn = nrarfcn,
-                frequencyMHz = BandDictionary.toFrequencyMHz(nrarfcn),
+                frequencyMHz = BandDictionary.toNrFrequencyMhz(nrarfcn),
                 // キャリア名が空の場合は CellIdentity から取る
                 carrierName = carrierName.ifEmpty { cellIdentity.operatorAlphaShort.toString() },
             )

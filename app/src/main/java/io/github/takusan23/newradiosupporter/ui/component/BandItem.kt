@@ -18,28 +18,16 @@ fun BandItem(
         modifier = modifier,
         color = Color.Transparent
     ) {
-        if (bandData.isNR) {
-            CommonItem(
-                icon = painterResource(id = R.drawable.ic_outline_5g_24),
-                title = """
+        val icon = painterResource(if (bandData.isNR) R.drawable.ic_outline_5g_24 else R.drawable.ic_outline_4g_mobiledata_24)
+        CommonItem(
+            icon = icon,
+            title = """
                 ${stringResource(id = R.string.carrier_name)}：${bandData.carrierName}
                 ${stringResource(id = R.string.connecting_band)}：${bandData.band}
                 ${stringResource(id = R.string.earfcn)}：${bandData.earfcn}
                 ${stringResource(id = R.string.frequency)} : ${bandData.frequencyMHz} MHz
             """.trimIndent(),
-                description = stringResource(id = R.string.band_info)
-            )
-        } else {
-            CommonItem(
-                icon = painterResource(id = R.drawable.ic_outline_4g_mobiledata_24),
-                title = """
-                ${stringResource(id = R.string.carrier_name)}：${bandData.carrierName}
-                ${stringResource(id = R.string.connecting_band)}：${bandData.band}
-                ${stringResource(id = R.string.earfcn)}：${bandData.earfcn}
-            """.trimIndent(),
-                description = stringResource(id = R.string.band_info)
-            )
-        }
+            description = stringResource(id = R.string.band_info)
+        )
     }
-
 }
