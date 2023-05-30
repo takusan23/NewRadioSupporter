@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Divider
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -34,17 +33,16 @@ fun LicenseScreen(onBack: () -> Unit) {
                 title = { Text(text = stringResource(id = R.string.license)) },
                 navigationIcon = { BackIcon(onClick = onBack) }
             )
-        },
-        content = {
-            Box(modifier = Modifier.padding(it)) {
-                LazyColumn(content = {
-                    items(list) { data ->
-                        LicenseItem(licenseData = data)
-                    }
-                })
+        }
+    ) {
+        Box(modifier = Modifier.padding(it)) {
+            LazyColumn {
+                items(list) { data ->
+                    LicenseItem(licenseData = data)
+                }
             }
         }
-    )
+    }
 }
 
 /**
