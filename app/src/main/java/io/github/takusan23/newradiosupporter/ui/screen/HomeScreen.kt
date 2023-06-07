@@ -43,7 +43,6 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             MediumTopAppBar(
                 title = { Text(text = stringResource(id = R.string.app_name)) },
                 actions = { AboutMenuIcon { onNavigate(NavigationLinkList.SettingScreen) } },
-                colors = TopAppBarDefaults.mediumTopAppBarColors(scrolledContainerColor = MaterialTheme.colorScheme.surface),
                 scrollBehavior = scrollBehavior
             )
         }

@@ -7,8 +7,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.takusan23.newradiosupporter.tool.PermissionCheckTool
 import io.github.takusan23.newradiosupporter.ui.theme.NewRadioSupporterTheme
-import io.github.takusan23.newradiosupporter.ui.tool.SetNavigationBarColor
-import io.github.takusan23.newradiosupporter.ui.tool.SetStatusBarColor
+import io.github.takusan23.newradiosupporter.ui.tool.SetFitsSystemWindow
 
 /**
  * 下地になる画面
@@ -19,8 +18,7 @@ fun NewRadioSupporterMainScreen() {
         val context = LocalContext.current
 
         // システムバーの色
-        SetStatusBarColor()
-        SetNavigationBarColor()
+        SetFitsSystemWindow()
 
         // ナビゲーション
         val navController = rememberNavController()
