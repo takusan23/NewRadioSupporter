@@ -50,22 +50,30 @@ https://issuetracker.google.com/issues/253539094
 JetpackComposeでできてます。最新のAndroid Studioで実行できるはずです。
 
 ## superuserブランチ
-`Shizuku API`を利用し、`PhysicalChannelConfig`から電波状況を取得してみたものです。
+`Shizuku API`を利用し、`PhysicalChannelConfig`から電波状況を取得してみたものです。（Android 12 以降）
 5Gのプライマリ、セカンダリセルの内訳 や 4Gのキャリアアグリゲーションの内訳 が見れるらしいです。  
-上記のAPIはサードパーティーには公開されていないので、`Shizuku API ( adb or root )`が必要です。
+上記のAPIはサードパーティーには公開されていないので、`Shizuku API ( adb or root )`が必要です。  
+あんまり安定してません・・・。
 
 また、ビルドするためには、android.jar の差し替え（ https://github.com/Reginer/aosp-android-jar ）と何故かプロジェクト内の `.idea` を消す必要があります。
 
 ## 実行方法
 `Android Studio`が必要です
 
+- Android端末で Shizuku を使うための準備をします
+  - https://shizuku.rikka.app/guide/setup/
 - このリポジトリをクローンします
   - `git clone https://github.com/takusan23/NewRadioSupporter`
   - git がない場合は zip をダウンロードして解凍しても良いかもしれないです
+- android.jar を差し替えます
+  - https://github.com/Reginer/aosp-android-jar
+- 一応、プロジェクト内の`.idea`フォルダーを消しておいたほうが良いかもです。初回時は無いです
 - Android Studio で開きます
   - ![Imgur](https://imgur.com/9n2ygdE.png)
 - 暫く待つと、実行ボタンが押せるようになるので押します
   - ![Imgur](https://imgur.com/O5855id.png)
+- アプリが起動後、権限を与えると使えるはずです
+  - 機内モード切り替えとか試してみてください
 
 ## そのほか
 `*#*#4636#*#*`で`NR/LTE`にしておくと、SIMカードを抜いても動く？（なんで...）
