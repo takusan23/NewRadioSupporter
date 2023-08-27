@@ -33,4 +33,5 @@
     <string name="type_lte_freq_nr">I\'m connecting to repurposed 5G. Communication speed will be equivalent to 4G.</string>
     <string name="open_mobile_data_setting_screen_title">Open the mobile data settings screen</string>
     <string name="open_mobile_data_setting_screen_description">Open the device settings screen</string>
+    <string name="new_radio_supporter_widget_description">You can see 5G on the home screen</string>
 </resources>

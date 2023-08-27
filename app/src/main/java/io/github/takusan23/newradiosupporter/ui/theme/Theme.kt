@@ -7,7 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-private val LightThemeColors = lightColorScheme(
+val LightThemeColors = lightColorScheme(
 
     primary = md_theme_light_primary,
     onPrimary = md_theme_light_onPrimary,
@@ -35,7 +35,7 @@ private val LightThemeColors = lightColorScheme(
     inverseOnSurface = md_theme_light_inverseOnSurface,
     inverseSurface = md_theme_light_inverseSurface,
 )
-private val DarkThemeColors = darkColorScheme(
+val DarkThemeColors = darkColorScheme(
 
     primary = md_theme_dark_primary,
     onPrimary = md_theme_dark_onPrimary,

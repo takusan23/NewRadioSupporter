@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "io.github.takusan23.newradiosupporter"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "io.github.takusan23.newradiosupporter"
         minSdk = 30
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 9
         versionName = "2.4.0"
 
@@ -53,6 +53,9 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.7.2")
     implementation("com.google.android.material:material:1.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
+
+    implementation("androidx.glance:glance-appwidget:1.0.0-rc01")
+    implementation("androidx.glance:glance-material3:1.0.0-rc01")
 
     val composeBom = platform("androidx.compose:compose-bom:2023.05.01")
     implementation(composeBom)

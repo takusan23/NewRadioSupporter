@@ -34,4 +34,5 @@
     <string name="type_lte_freq_nr">転用5Gに接続中です。通信速度は4Gと同等になります。</string>
     <string name="open_mobile_data_setting_screen_description">端末の設定画面を開きます</string>
     <string name="open_mobile_data_setting_screen_title">モバイルデータの設定画面を開く</string>
+    <string name="new_radio_supporter_widget_description">ホーム画面で5Gを確認できます</string>
 </resources>
