@@ -16,6 +16,7 @@ import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalSize
+import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
@@ -35,9 +36,11 @@ import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
+import androidx.glance.layout.width
 import androidx.glance.material3.ColorProviders
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
+import io.github.takusan23.newradiosupporter.MainActivity
 import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
 import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
@@ -45,6 +48,8 @@ import io.github.takusan23.newradiosupporter.tool.data.NetworkStatusData
 import io.github.takusan23.newradiosupporter.tool.data.NrStandAloneType
 import io.github.takusan23.newradiosupporter.ui.theme.DarkThemeColors
 import io.github.takusan23.newradiosupporter.ui.theme.LightThemeColors
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filterNotNull
 
 /**
  * Jetpack Compose の書き方で RemoteView が作れる
@@ -80,30 +85,33 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(GlanceTheme.colors.background)
-                .cornerRadius(16.dp),
+                .background(GlanceTheme.colors.secondaryContainer) // 他のウィジェットもこの色っぽい
+                .cornerRadius(16.dp)
         ) {
-
-            Row(
-                modifier = GlanceModifier
-                    .padding(5.dp)
-                    .fillMaxWidth()
-            ) {
-                Spacer(modifier = GlanceModifier.defaultWeight())
-                WidgetUpdateButton {
-                    updateKey.value = System.currentTimeMillis()
-                }
-            }
-
             LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
+                item {
+                    Row(
+                        modifier = GlanceModifier
+                            .padding(5.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.Horizontal.End
+                    ) {
+                        WidgetLaunchButton()
+                        Spacer(modifier = GlanceModifier.width(10.dp))
+                        WidgetUpdateButton {
+                            updateKey.value = System.currentTimeMillis()
+                        }
+                    }
+                }
                 items(multipleSimSubscriptionIdList.value) { subscriptionId ->
                     val status = remember { mutableStateOf<NetworkStatusData?>(null) }
                     // 電測データを Flow で収集する
                     // provideContent が動いている間は動くはず...
                     LaunchedEffect(key1 = updateKey.value) {
-                        NetworkStatusFlow.collectNetworkStatus(context, subscriptionId).collect {
-                            status.value = it
-                        }
+                        NetworkStatusFlow.collectNetworkStatus(context, subscriptionId)
+                            .distinctUntilChanged()
+                            .filterNotNull()
+                            .collect { status.value = it }
                     }
                     Box(modifier = GlanceModifier.padding(5.dp)) {
                         if (status.value != null) {
@@ -124,16 +132,18 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
         Column(
             modifier = GlanceModifier
                 .fillMaxSize()
-                .background(GlanceTheme.colors.background)
-                .cornerRadius(16.dp),
+                .background(GlanceTheme.colors.secondaryContainer)
+                .cornerRadius(16.dp)
         ) {
 
             Row(
                 modifier = GlanceModifier
                     .padding(5.dp)
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.Horizontal.End
             ) {
-                Spacer(modifier = GlanceModifier.defaultWeight())
+                WidgetLaunchButton()
+                Spacer(modifier = GlanceModifier.width(10.dp))
                 WidgetUpdateButton {
                     updateKey.value = System.currentTimeMillis()
                 }
@@ -145,9 +155,10 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                     // 電測データを Flow で収集する
                     // provideContent が動いている間は動くはず...
                     LaunchedEffect(key1 = updateKey.value) {
-                        NetworkStatusFlow.collectNetworkStatus(context, subscriptionId).collect {
-                            status.value = it
-                        }
+                        NetworkStatusFlow.collectNetworkStatus(context, subscriptionId)
+                            .distinctUntilChanged()
+                            .filterNotNull()
+                            .collect { status.value = it }
                     }
                     Box(
                         modifier = GlanceModifier
@@ -181,9 +192,9 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .background(GlanceTheme.colors.primaryContainer)
+                .background(GlanceTheme.colors.background)
                 .cornerRadius(10.dp)
-                .padding(5.dp),
+                .padding(5.dp)
         ) {
 
             Row(modifier = GlanceModifier.fillMaxWidth()) {
@@ -265,7 +276,7 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .background(GlanceTheme.colors.primaryContainer)
+                .background(GlanceTheme.colors.background)
                 .cornerRadius(10.dp)
                 .padding(5.dp),
         ) {
@@ -323,7 +334,7 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                     }
                 ),
                 contentDescription = null,
-                colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
+                colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
             )
 
             Image(
@@ -338,7 +349,7 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                     }
                 ),
                 contentDescription = null,
-                colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
+                colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
             )
         }
     }
@@ -379,12 +390,31 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
             modifier = modifier
                 .size(40.dp)
                 .padding(5.dp)
-                .background(GlanceTheme.colors.secondaryContainer)
+                .background(GlanceTheme.colors.primary)
                 .cornerRadius(10.dp)
                 .clickable(onClick),
-            provider = ImageProvider(resId = R.drawable.ic_outline_info_24),
+            provider = ImageProvider(resId = R.drawable.ic_outline_refresh_24),
             contentDescription = null,
-            colorFilter = ColorFilter.tint(GlanceTheme.colors.secondary),
+            colorFilter = ColorFilter.tint(GlanceTheme.colors.primaryContainer)
+        )
+    }
+
+    /**
+     * アプリを起動するボタン
+     *
+     * @param modifier [GlanceModifier]
+     */
+    @Composable
+    private fun WidgetLaunchButton(modifier: GlanceModifier = GlanceModifier) {
+        Image(
+            modifier = modifier
+                .size(40.dp)
+                .padding(10.dp)
+                .cornerRadius(10.dp)
+                .clickable(actionStartActivity(MainActivity::class.java)),
+            provider = ImageProvider(resId = R.drawable.ic_outline_open_in_new_24),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
         )
     }
 

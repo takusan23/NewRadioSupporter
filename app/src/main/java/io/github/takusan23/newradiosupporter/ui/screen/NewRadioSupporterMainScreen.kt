@@ -7,7 +7,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.github.takusan23.newradiosupporter.tool.PermissionCheckTool
 import io.github.takusan23.newradiosupporter.ui.theme.NewRadioSupporterTheme
-import io.github.takusan23.newradiosupporter.ui.tool.SetFitsSystemWindow
 
 /**
  * 下地になる画面
@@ -16,10 +15,6 @@ import io.github.takusan23.newradiosupporter.ui.tool.SetFitsSystemWindow
 fun NewRadioSupporterMainScreen() {
     NewRadioSupporterTheme {
         val context = LocalContext.current
-
-        // システムバーの色
-        SetFitsSystemWindow()
-
         // ナビゲーション
         val navController = rememberNavController()
         // 権限なければ権限画面へ
