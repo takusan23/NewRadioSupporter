@@ -89,20 +89,14 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                 .cornerRadius(16.dp)
         ) {
             LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
+                // 更新、起動ボタン
                 item {
-                    Row(
-                        modifier = GlanceModifier
-                            .padding(5.dp)
-                            .fillMaxWidth(),
-                        horizontalAlignment = Alignment.Horizontal.End
-                    ) {
-                        WidgetLaunchButton()
-                        Spacer(modifier = GlanceModifier.width(10.dp))
-                        WidgetUpdateButton {
-                            updateKey.value = System.currentTimeMillis()
-                        }
-                    }
+                    WidgetButtonRow(
+                        modifier = GlanceModifier.fillMaxWidth(),
+                        onUpdateButtonClick = { updateKey.value = System.currentTimeMillis() }
+                    )
                 }
+                // 縦並びで情報の表示
                 items(multipleSimSubscriptionIdList.value) { subscriptionId ->
                     val status = remember { mutableStateOf<NetworkStatusData?>(null) }
                     // 電測データを Flow で収集する
@@ -135,41 +129,42 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                 .background(GlanceTheme.colors.secondaryContainer)
                 .cornerRadius(16.dp)
         ) {
-
-            Row(
-                modifier = GlanceModifier
-                    .padding(5.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.Horizontal.End
-            ) {
-                WidgetLaunchButton()
-                Spacer(modifier = GlanceModifier.width(10.dp))
-                WidgetUpdateButton {
-                    updateKey.value = System.currentTimeMillis()
+            LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
+                // 更新、起動ボタン
+                item {
+                    WidgetButtonRow(
+                        modifier = GlanceModifier.fillMaxWidth(),
+                        onUpdateButtonClick = { updateKey.value = System.currentTimeMillis() }
+                    )
                 }
-            }
-
-            Row(modifier = GlanceModifier.fillMaxSize()) {
-                multipleSimSubscriptionIdList.value.forEach { subscriptionId ->
-                    val status = remember { mutableStateOf<NetworkStatusData?>(null) }
-                    // 電測データを Flow で収集する
-                    // provideContent が動いている間は動くはず...
-                    LaunchedEffect(key1 = updateKey.value) {
-                        NetworkStatusFlow.collectNetworkStatus(context, subscriptionId)
-                            .distinctUntilChanged()
-                            .filterNotNull()
-                            .collect { status.value = it }
-                    }
-                    Box(
+                // 横並びで情報の表示
+                item {
+                    Row(
                         modifier = GlanceModifier
-                            .defaultWeight()
                             .padding(5.dp)
+                            .fillMaxWidth()
                     ) {
-                        if (status.value != null) {
-                            LargeNetworkStatusCard(
-                                context = context,
-                                networkStatusData = status.value!!
-                            )
+                        multipleSimSubscriptionIdList.value.forEachIndexed { index, subscriptionId ->
+                            val status = remember { mutableStateOf<NetworkStatusData?>(null) }
+                            // 電測データを Flow で収集する
+                            // provideContent が動いている間は動くはず...
+                            LaunchedEffect(key1 = updateKey.value) {
+                                NetworkStatusFlow.collectNetworkStatus(context, subscriptionId)
+                                    .distinctUntilChanged()
+                                    .filterNotNull()
+                                    .collect { status.value = it }
+                            }
+                            // デュアルSIMの場合は間にスペースを開ける
+                            if (index != 0) {
+                                Spacer(modifier = GlanceModifier.size(5.dp))
+                            }
+                            if (status.value != null) {
+                                LargeNetworkStatusCard(
+                                    modifier = GlanceModifier.defaultWeight(),
+                                    context = context,
+                                    networkStatusData = status.value!!
+                                )
+                            }
                         }
                     }
                 }
@@ -191,7 +186,6 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
     ) {
         Column(
             modifier = modifier
-                .fillMaxSize()
                 .background(GlanceTheme.colors.background)
                 .cornerRadius(10.dp)
                 .padding(5.dp)
@@ -373,6 +367,28 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
             text = text,
             style = TextStyle(color = GlanceTheme.colors.tertiary)
         )
+    }
+
+    /**
+     * ウィジェットのボタンをまとめたもの
+     *
+     * @param modifier [GlanceModifier]
+     * @param onUpdateButtonClick 更新ボタンを押した時に呼ばれる
+     */
+    @Composable
+    private fun WidgetButtonRow(
+        modifier: GlanceModifier = GlanceModifier,
+        onUpdateButtonClick: () -> Unit
+    ) {
+        Row(
+            modifier = modifier
+                .padding(5.dp),
+            horizontalAlignment = Alignment.Horizontal.End
+        ) {
+            WidgetLaunchButton()
+            Spacer(modifier = GlanceModifier.width(10.dp))
+            WidgetUpdateButton(onClick = onUpdateButtonClick)
+        }
     }
 
     /**
