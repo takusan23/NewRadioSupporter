@@ -1,0 +1,254 @@
+{
+  "version": 1,
+  "layers": {
+    "vectorLayer": {
+      "id": "1011",
+      "name": "vector",
+      "type": "vector",
+      "width": 873,
+      "height": 873,
+      "children": [
+        {
+          "id": "1009",
+          "name": "group",
+          "type": "group",
+          "children": [
+            {
+              "id": "926",
+              "name": "clip_path",
+              "type": "mask",
+              "pathData": "M 0 0 L 873 0 L 873 873 L 0 873 Z"
+            },
+            {
+              "id": "934",
+              "name": "path",
+              "type": "path",
+              "pathData": "M 399 385 L 330 385",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "939",
+              "name": "path_1",
+              "type": "path",
+              "pathData": "M 399 385 L 399 314",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "944",
+              "name": "path_2",
+              "type": "path",
+              "pathData": "M 399 314 L 330 314",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "949",
+              "name": "path_3",
+              "type": "path",
+              "pathData": "M 399 243 L 330 243",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "954",
+              "name": "path_4",
+              "type": "path",
+              "pathData": "M 330 243 L 330 314",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "959",
+              "name": "path_5",
+              "type": "path",
+              "pathData": "M 542 317 L 542 388",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "964",
+              "name": "path_6",
+              "type": "path",
+              "pathData": "M 514 317 L 542 317",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "969",
+              "name": "path_7",
+              "type": "path",
+              "pathData": "M 542 388 L 473 388",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "974",
+              "name": "path_8",
+              "type": "path",
+              "pathData": "M 473 317 L 473 388",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "979",
+              "name": "path_9",
+              "type": "path",
+              "pathData": "M 473 246 L 473 317",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "984",
+              "name": "path_10",
+              "type": "path",
+              "pathData": "M 542 246 L 473 246",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "989",
+              "name": "level_4",
+              "type": "path",
+              "pathData": "M 571 448 L 571 629",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeAlpha": 0,
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "994",
+              "name": "level_3",
+              "type": "path",
+              "pathData": "M 481 497 L 481 629",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeAlpha": 0,
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "999",
+              "name": "level_2",
+              "type": "path",
+              "pathData": "M 391 556 L 391 629",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeAlpha": 0,
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round",
+              "fillType": "evenOdd"
+            },
+            {
+              "id": "1004",
+              "name": "level_1",
+              "type": "path",
+              "pathData": "M 301 608 L 301 629",
+              "fillColor": "#00000000",
+              "strokeColor": "#006494",
+              "strokeAlpha": 0,
+              "strokeWidth": 30,
+              "strokeLinecap": "round",
+              "strokeLinejoin": "round",
+              "fillType": "evenOdd"
+            }
+          ]
+        }
+      ]
+    },
+    "hiddenLayerIds": []
+  },
+  "timeline": {
+    "animation": {
+      "id": "2",
+      "name": "anim",
+      "duration": 500,
+      "blocks": [
+        {
+          "id": "1012",
+          "layerId": "1004",
+          "propertyName": "strokeAlpha",
+          "startTime": 0,
+          "endTime": 200,
+          "interpolator": "FAST_OUT_SLOW_IN",
+          "type": "number",
+          "fromValue": 0,
+          "toValue": 1
+        },
+        {
+          "id": "1013",
+          "layerId": "999",
+          "propertyName": "strokeAlpha",
+          "startTime": 200,
+          "endTime": 299,
+          "interpolator": "FAST_OUT_SLOW_IN",
+          "type": "number",
+          "fromValue": 0,
+          "toValue": 1
+        },
+        {
+          "id": "1014",
+          "layerId": "994",
+          "propertyName": "strokeAlpha",
+          "startTime": 302,
+          "endTime": 401,
+          "interpolator": "FAST_OUT_SLOW_IN",
+          "type": "number",
+          "fromValue": 0,
+          "toValue": 1
+        },
+        {
+          "id": "1015",
+          "layerId": "989",
+          "propertyName": "strokeAlpha",
+          "startTime": 401,
+          "endTime": 500,
+          "interpolator": "FAST_OUT_SLOW_IN",
+          "type": "number",
+          "fromValue": 0,
+          "toValue": 1
+        }
+      ]
+    }
+  }
+}

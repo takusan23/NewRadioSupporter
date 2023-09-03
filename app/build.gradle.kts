@@ -53,6 +53,7 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.8.0-alpha07") // enableEdgeToEdge() 使いたい
     implementation("com.google.android.material:material:1.9.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.1")
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
     implementation("androidx.glance:glance-appwidget:1.0.0-rc01")
     implementation("androidx.glance:glance-material3:1.0.0-rc01")
