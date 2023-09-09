@@ -8,10 +8,14 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
 import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
@@ -42,12 +46,23 @@ class BackgroundNrSupporter : Service() {
 
     override fun onCreate() {
         super.onCreate()
+
+        fun startForegroundCompat(notification: Notification) {
+            if (Build.VERSION.SDK_INT >= 34) {
+                ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+            } else {
+                ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE)
+            }
+        }
+
         // とりあえず殺される前に通知出す
-        startForeground(NOTIFICATION_ID, showNotification(null, null))
+        startForegroundCompat(showNotification(null, null))
+
         // ブロードキャスト登録
-        registerReceiver(broadcastReceiver, IntentFilter().apply {
+        ContextCompat.registerReceiver(this, broadcastReceiver, IntentFilter().apply {
             addAction(STOP_SERVICE_BROADCAST)
-        })
+        }, ContextCompat.RECEIVER_EXPORTED) // システム（通知押した時）のブロードキャストは exported じゃないとダメ？
+
         // デュアルSIMに対応させる
         // Flow で監視
         NetworkStatusFlow.collectMultipleSimSubscriptionIdList(this).onEach { subscriptionIdList ->
@@ -62,7 +77,7 @@ class BackgroundNrSupporter : Service() {
                         val notification = showNotification(band, type)
                         if (index == 0) {
                             // 1枚目のSIMはフォアグラウンドサービス通知のために出す
-                            startForeground(NOTIFICATION_ID, notification)
+                            startForegroundCompat(notification)
                         } else {
                             // 2枚目は通知として出す
                             notificationManagerCompat.notify(NOTIFICATION_ID + index, notification)
