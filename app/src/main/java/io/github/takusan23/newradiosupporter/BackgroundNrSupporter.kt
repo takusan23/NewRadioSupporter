@@ -47,8 +47,9 @@ class BackgroundNrSupporter : Service() {
     override fun onCreate() {
         super.onCreate()
 
+        // TODO Compat がリリースされたら、バージョン分岐消して Compat で書き直す
         fun startForegroundCompat(notification: Notification) {
-            if (Build.VERSION.SDK_INT >= 34) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
             } else {
                 ServiceCompat.startForeground(this, NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_NONE)
