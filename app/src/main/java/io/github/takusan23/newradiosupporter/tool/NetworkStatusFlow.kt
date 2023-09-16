@@ -11,9 +11,14 @@ import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
 import io.github.takusan23.newradiosupporter.tool.data.NetworkStatusData
 import io.github.takusan23.newradiosupporter.tool.data.NrStandAloneType
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.coroutines.resume
@@ -27,6 +32,40 @@ object NetworkStatusFlow {
 
     /** [collectNetworkStatus]の間隔 */
     private const val DELAY_MS = 3_000L
+
+
+    /**
+     * [collectMultipleSimSubscriptionIdList]と[collectNetworkStatus]の合体版
+     * TODO テストを書く
+     *
+     * @param context [Context]
+     * @return SIM カードの枚数分 [NetworkStatusData] を返す [Flow]。SIM カードが変化しても購読できる。
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun collectMultipleNetworkStatus(context: Context) = collectMultipleSimSubscriptionIdList(context)
+        // transformLatest を使い、Flow から新しい値が流れてきた場合はこのブロックのコルーチンをキャンセルして再起動する
+        // これで SIM カードの状態が変化しても、電測データを再度購読し直すようにしている
+        .transformLatest { subscriptionIdList ->
+            // 配列を返したい
+            val statusArray = Array<NetworkStatusData?>(subscriptionIdList.size) { null }
+
+            subscriptionIdList
+                // SIM カードの枚数分 電測データを購読する
+                .mapIndexed { index, subscriptionId ->
+                    collectNetworkStatus(
+                        context = context,
+                        subscriptionId = subscriptionId
+                    ).onEach { networkStatusData ->
+                        // 返り値は配列にしたい
+                        statusArray[index] = networkStatusData
+                        // 値が来たら transformLatest に渡すことで、この Flow の返り値となる
+                        emit(statusArray.filterNotNull())
+                    }
+                }
+                // 複数の Flow を1つにして、購読する
+                .merge()
+                .collect()
+        }
 
     /**
      * [NetworkStatusData]を取得する。
