@@ -1,5 +1,6 @@
 package io.github.takusan23.newradiosupporter
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -8,6 +9,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -19,11 +21,9 @@ import androidx.core.content.ContextCompat
 import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
 import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * バックグラウンド5G監視サービス
@@ -31,9 +31,6 @@ import kotlinx.coroutines.flow.onEach
 class BackgroundNrSupporter : Service() {
     /** SIMカードを監視するスコープ */
     private val scope = MainScope()
-
-    /** 回線を監視するFlow。キャンセル用 */
-    private val statusCollectFlowJobList = mutableListOf<Job>()
 
     private val notificationManagerCompat by lazy { NotificationManagerCompat.from(this) }
     private val broadcastReceiver = object : BroadcastReceiver() {
@@ -64,28 +61,24 @@ class BackgroundNrSupporter : Service() {
             addAction(STOP_SERVICE_BROADCAST)
         }, ContextCompat.RECEIVER_EXPORTED) // システム（通知押した時）のブロードキャストは exported じゃないとダメ？
 
-        // デュアルSIMに対応させる
         // Flow で監視
-        NetworkStatusFlow.collectMultipleSimSubscriptionIdList(this).onEach { subscriptionIdList ->
-            // 監視してたFlowをキャンセル
-            statusCollectFlowJobList.forEach { it.cancel() }
-            // SIMの枚数だけ監視する
-            subscriptionIdList.forEachIndexed { index, subscriptionId ->
-                statusCollectFlowJobList += NetworkStatusFlow.collectNetworkStatus(this, subscriptionId)
-                    .filterNotNull()
-                    .distinctUntilChanged()
-                    .onEach { (_, band, type, _) ->
-                        val notification = showNotification(band, type)
-                        if (index == 0) {
-                            // 1枚目のSIMはフォアグラウンドサービス通知のために出す
-                            startForegroundCompat(notification)
-                        } else {
-                            // 2枚目は通知として出す
+        scope.launch {
+            NetworkStatusFlow.collectMultipleNetworkStatus(this@BackgroundNrSupporter).collect { statusDataList ->
+                statusDataList.forEachIndexed { index, statusData ->
+                    val (_, band, type, _) = statusData
+                    val notification = showNotification(band, type)
+                    if (index == 0) {
+                        // 1枚目のSIMはフォアグラウンドサービス通知のために出す
+                        startForegroundCompat(notification)
+                    } else {
+                        // 2 枚目は通知として出す
+                        if (ContextCompat.checkSelfPermission(this@BackgroundNrSupporter, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
                             notificationManagerCompat.notify(NOTIFICATION_ID + index, notification)
                         }
-                    }.launchIn(scope)
+                    }
+                }
             }
-        }.launchIn(scope)
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

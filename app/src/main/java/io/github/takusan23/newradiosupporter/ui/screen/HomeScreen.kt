@@ -3,7 +3,7 @@ package io.github.takusan23.newradiosupporter.ui.screen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -34,8 +34,8 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     // Flowで収集する
-    val isUnlimitedNetwork = remember { NetworkStatusFlow.collectUnlimitedNetwork(context) }.collectAsStateWithLifecycle(initialValue = null)
-    val multipleSimSubscriptionIdList = remember { NetworkStatusFlow.collectMultipleSimSubscriptionIdList(context) }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val isUnlimitedNetwork = NetworkStatusFlow.collectUnlimitedNetwork(context).collectAsStateWithLifecycle(initialValue = null)
+    val multipleNetworkStatusDataList = NetworkStatusFlow.collectMultipleNetworkStatus(context).collectAsStateWithLifecycle(initialValue = emptyList())
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -51,42 +51,38 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             modifier = Modifier.padding(it),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // SIMカードの数だけ Flow を監視する
-            itemsIndexed(multipleSimSubscriptionIdList.value) { _, subscriptionId ->
-                val status = remember { NetworkStatusFlow.collectNetworkStatus(context, subscriptionId) }.collectAsStateWithLifecycle(initialValue = null)
+            // SIM カードの枚数分表示
+            items(multipleNetworkStatusDataList.value) { status ->
                 // 押したら展開できるようにするため
-                val isExpanded = remember { mutableStateOf(false) }
                 // 初期値はデータ通信に設定されたSIMカードのスロット番号
-                LaunchedEffect(key1 = status.value?.simSlotIndex) {
-                    isExpanded.value = status.value?.simSlotIndex == NetworkStatusFlow.getDataUsageSimSlotIndex(context)
-                }
-                if (status.value != null) {
-                    Card(
-                        modifier = Modifier.padding(top = 20.dp, start = 20.dp, end = 20.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(CardTonalElevation)),
-                        onClick = { isExpanded.value = !isExpanded.value }
-                    ) {
-                        // 押したら展開できるように
-                        if (isExpanded.value) {
-                            SimNetWorkStatusExpanded(
-                                modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                finalNRType = status.value?.finalNRType!!,
-                                nrStandAloneType = status.value?.nrStandAloneType
-                            )
-                            BandItem(
-                                modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                bandData = status.value?.bandData!!
-                            )
-                        } else {
-                            SimNetworkOverview(
-                                simIndex = status.value?.simSlotIndex!! + 1,
-                                bandData = status.value?.bandData!!,
-                                finalNRType = status.value?.finalNRType!!,
-                                nrStandAloneType = status.value?.nrStandAloneType!!,
-                            )
-                        }
+                val isExpanded = remember { mutableStateOf(status.simSlotIndex == NetworkStatusFlow.getDataUsageSimSlotIndex(context)) }
+
+                Card(
+                    modifier = Modifier.padding(top = 20.dp, start = 20.dp, end = 20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(CardTonalElevation)),
+                    onClick = { isExpanded.value = !isExpanded.value }
+                ) {
+                    // 押したら展開できるように
+                    if (isExpanded.value) {
+                        SimNetWorkStatusExpanded(
+                            modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                            finalNRType = status.finalNRType,
+                            nrStandAloneType = status.nrStandAloneType
+                        )
+                        BandItem(
+                            modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                            bandData = status.bandData
+                        )
+                    } else {
+                        SimNetworkOverview(
+                            simIndex = status.simSlotIndex + 1,
+                            bandData = status.bandData,
+                            finalNRType = status.finalNRType,
+                            nrStandAloneType = status.nrStandAloneType,
+                        )
                     }
                 }
+
             }
             item {
                 if (isUnlimitedNetwork.value != null) {

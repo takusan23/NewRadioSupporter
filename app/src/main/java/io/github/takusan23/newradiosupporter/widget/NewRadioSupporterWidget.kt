@@ -3,10 +3,8 @@ package io.github.takusan23.newradiosupporter.widget
 import android.content.Context
 import android.os.Build
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.ColorFilter
@@ -22,6 +20,7 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
+import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -48,8 +47,7 @@ import io.github.takusan23.newradiosupporter.tool.data.NetworkStatusData
 import io.github.takusan23.newradiosupporter.tool.data.NrStandAloneType
 import io.github.takusan23.newradiosupporter.ui.theme.DarkThemeColors
 import io.github.takusan23.newradiosupporter.ui.theme.LightThemeColors
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
 
 /**
  * Jetpack Compose の書き方で RemoteView が作れる
@@ -63,24 +61,46 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
     /** ウィジェットのレイアウトをここに書いていく */
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
+            val scope = rememberCoroutineScope()
+
+            /** ウィジェットを更新する */
+            fun update() {
+                scope.launch {
+                    NewRadioSupporterWidget().update(context, id)
+                }
+            }
+
             // Material You が使える場合は使う
             GlanceTheme(colors = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) GlanceTheme.colors else colors) {
                 val size = LocalSize.current
                 // サイズによってレイアウトを切り替える
                 if (size.width >= LARGE.width) {
-                    LargeWidgetContent(context = context)
+                    LargeWidgetContent(
+                        context = context,
+                        onUpdateButtonClick = { update() }
+                    )
                 } else {
-                    SmallWidgetContent(context = context)
+                    SmallWidgetContent(
+                        context = context,
+                        onUpdateButtonClick = { update() }
+                    )
                 }
             }
         }
     }
 
-    /** 小さいウィジェットのレイアウト */
+    /**
+     * 小さいウィジェットのレイアウト
+     *
+     * @param context [Context]
+     * @param onUpdateButtonClick 更新ボタンを押したら呼ばれる
+     */
     @Composable
-    private fun SmallWidgetContent(context: Context) {
-        val multipleSimSubscriptionIdList = NetworkStatusFlow.collectMultipleSimSubscriptionIdList(context).collectAsState(emptyList())
-        val updateKey = remember { mutableStateOf(System.currentTimeMillis()) }
+    private fun SmallWidgetContent(
+        context: Context,
+        onUpdateButtonClick: () -> Unit
+    ) {
+        val multipleNetworkStatusDataList = NetworkStatusFlow.collectMultipleNetworkStatus(context).collectAsState(initial = emptyList())
 
         Column(
             modifier = GlanceModifier
@@ -93,27 +113,22 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                 item {
                     WidgetButtonRow(
                         modifier = GlanceModifier.fillMaxWidth(),
-                        onUpdateButtonClick = { updateKey.value = System.currentTimeMillis() }
+                        onUpdateButtonClick = onUpdateButtonClick
                     )
                 }
-                // 縦並びで情報の表示。items {} はなんか動かない？
-                multipleSimSubscriptionIdList.value.forEach { subscriptionId ->
+                // 縦並びで情報の表示
+                if (multipleNetworkStatusDataList.value.isEmpty()) {
+                    // 取得できなかった時
                     item {
-                        val status = remember { mutableStateOf<NetworkStatusData?>(null) }
-                        // 電測データを Flow で収集する
-                        // provideContent が動いている間は動くはず...
-                        LaunchedEffect(key1 = updateKey.value) {
-                            NetworkStatusFlow.collectNetworkStatus(context, subscriptionId)
-                                .distinctUntilChanged()
-                                .filterNotNull()
-                                .collect { status.value = it }
-                        }
                         Box(modifier = GlanceModifier.padding(5.dp)) {
-                            if (status.value != null) {
-                                SmallNetworkStatusCard(networkStatusData = status.value!!)
-                            } else {
-                                EmptyState(context = context)
-                            }
+                            EmptyState(context = context)
+                        }
+                    }
+                } else {
+                    // SIM カードの枚数分表示
+                    items(multipleNetworkStatusDataList.value) { status ->
+                        Box(modifier = GlanceModifier.padding(5.dp)) {
+                            SmallNetworkStatusCard(networkStatusData = status)
                         }
                     }
                 }
@@ -121,11 +136,18 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
         }
     }
 
-    /** 大きいウィジェットのレイアウト */
+    /**
+     * 大きいウィジェットのレイアウト
+     *
+     * @param context [Context]
+     * @param onUpdateButtonClick 更新ボタンを押したら呼ばれる
+     */
     @Composable
-    private fun LargeWidgetContent(context: Context) {
-        val multipleSimSubscriptionIdList = NetworkStatusFlow.collectMultipleSimSubscriptionIdList(context).collectAsState(emptyList())
-        val updateKey = remember { mutableStateOf(System.currentTimeMillis()) }
+    private fun LargeWidgetContent(
+        context: Context,
+        onUpdateButtonClick: () -> Unit
+    ) {
+        val multipleNetworkStatusDataList = NetworkStatusFlow.collectMultipleNetworkStatus(context).collectAsState(initial = emptyList())
 
         Column(
             modifier = GlanceModifier
@@ -138,7 +160,7 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                 item {
                     WidgetButtonRow(
                         modifier = GlanceModifier.fillMaxWidth(),
-                        onUpdateButtonClick = { updateKey.value = System.currentTimeMillis() }
+                        onUpdateButtonClick = onUpdateButtonClick
                     )
                 }
                 // 横並びで情報の表示
@@ -148,30 +170,23 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                             .padding(5.dp)
                             .fillMaxWidth()
                     ) {
-                        multipleSimSubscriptionIdList.value.forEachIndexed { index, subscriptionId ->
-                            val status = remember { mutableStateOf<NetworkStatusData?>(null) }
-                            // 電測データを Flow で収集する
-                            // provideContent が動いている間は動くはず...
-                            LaunchedEffect(key1 = updateKey.value) {
-                                NetworkStatusFlow.collectNetworkStatus(context, subscriptionId)
-                                    .distinctUntilChanged()
-                                    .filterNotNull()
-                                    .collect { status.value = it }
-                            }
-                            // デュアルSIMの場合は間にスペースを開ける
-                            if (index != 0) {
-                                Spacer(modifier = GlanceModifier.size(5.dp))
-                            }
-                            if (status.value != null) {
+                        if (multipleNetworkStatusDataList.value.isEmpty()) {
+                            // 取得できなかった時
+                            EmptyState(
+                                modifier = GlanceModifier.defaultWeight(),
+                                context = context
+                            )
+                        } else {
+                            // SIM カードの枚数分表示
+                            multipleNetworkStatusDataList.value.forEachIndexed { index, status ->
+                                // デュアルSIMの場合は間にスペースを開ける
+                                if (index != 0) {
+                                    Spacer(modifier = GlanceModifier.size(5.dp))
+                                }
                                 LargeNetworkStatusCard(
                                     modifier = GlanceModifier.defaultWeight(),
                                     context = context,
-                                    networkStatusData = status.value!!
-                                )
-                            } else {
-                                EmptyState(
-                                    modifier = GlanceModifier.defaultWeight(),
-                                    context = context
+                                    networkStatusData = status
                                 )
                             }
                         }
@@ -371,6 +386,7 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
     ) {
         Column(
             modifier = modifier
+                .fillMaxWidth()
                 .background(GlanceTheme.colors.background)
                 .cornerRadius(10.dp)
                 .padding(5.dp),
