@@ -22,7 +22,6 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
-import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
@@ -39,6 +38,7 @@ import androidx.glance.layout.size
 import androidx.glance.layout.width
 import androidx.glance.material3.ColorProviders
 import androidx.glance.text.Text
+import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import io.github.takusan23.newradiosupporter.MainActivity
 import io.github.takusan23.newradiosupporter.R
@@ -96,20 +96,24 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                         onUpdateButtonClick = { updateKey.value = System.currentTimeMillis() }
                     )
                 }
-                // 縦並びで情報の表示
-                items(multipleSimSubscriptionIdList.value) { subscriptionId ->
-                    val status = remember { mutableStateOf<NetworkStatusData?>(null) }
-                    // 電測データを Flow で収集する
-                    // provideContent が動いている間は動くはず...
-                    LaunchedEffect(key1 = updateKey.value) {
-                        NetworkStatusFlow.collectNetworkStatus(context, subscriptionId)
-                            .distinctUntilChanged()
-                            .filterNotNull()
-                            .collect { status.value = it }
-                    }
-                    Box(modifier = GlanceModifier.padding(5.dp)) {
-                        if (status.value != null) {
-                            SmallNetworkStatusCard(networkStatusData = status.value!!)
+                // 縦並びで情報の表示。items {} はなんか動かない？
+                multipleSimSubscriptionIdList.value.forEach { subscriptionId ->
+                    item {
+                        val status = remember { mutableStateOf<NetworkStatusData?>(null) }
+                        // 電測データを Flow で収集する
+                        // provideContent が動いている間は動くはず...
+                        LaunchedEffect(key1 = updateKey.value) {
+                            NetworkStatusFlow.collectNetworkStatus(context, subscriptionId)
+                                .distinctUntilChanged()
+                                .filterNotNull()
+                                .collect { status.value = it }
+                        }
+                        Box(modifier = GlanceModifier.padding(5.dp)) {
+                            if (status.value != null) {
+                                SmallNetworkStatusCard(networkStatusData = status.value!!)
+                            } else {
+                                EmptyState(context = context)
+                            }
                         }
                     }
                 }
@@ -163,6 +167,11 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                                     modifier = GlanceModifier.defaultWeight(),
                                     context = context,
                                     networkStatusData = status.value!!
+                                )
+                            } else {
+                                EmptyState(
+                                    modifier = GlanceModifier.defaultWeight(),
+                                    context = context
                                 )
                             }
                         }
@@ -344,6 +353,42 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                 ),
                 contentDescription = null,
                 colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
+            )
+        }
+    }
+
+    /**
+     * エンプティーステート
+     * 更新ボタンを押してくださいのUI
+     *
+     * @param modifier [GlanceModifier]
+     * @param context [Context]
+     */
+    @Composable
+    private fun EmptyState(
+        modifier: GlanceModifier = GlanceModifier,
+        context: Context
+    ) {
+        Column(
+            modifier = modifier
+                .background(GlanceTheme.colors.background)
+                .cornerRadius(10.dp)
+                .padding(5.dp),
+            verticalAlignment = Alignment.Vertical.CenterVertically,
+            horizontalAlignment = Alignment.Horizontal.CenterHorizontally
+        ) {
+            Image(
+                modifier = GlanceModifier.size(40.dp),
+                provider = ImageProvider(R.drawable.ic_outline_info_24),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
+            )
+            Text(
+                text = context.getString(R.string.widget_update_message),
+                style = TextStyle(
+                    color = GlanceTheme.colors.primary,
+                    textAlign = TextAlign.Center
+                )
             )
         }
     }
