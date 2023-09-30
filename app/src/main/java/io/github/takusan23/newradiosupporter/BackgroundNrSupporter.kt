@@ -13,6 +13,7 @@ import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -101,15 +102,25 @@ class BackgroundNrSupporter : Service() {
             )
         }
         return NotificationCompat.Builder(this, NOTIFICATION_RUNNING_CHANNEL_ID).apply {
-            setContentTitle("バックグラウンド 5G 通知機能")
-            setContentText("バックグラウンド 5G 通知機能が実行中です。")
+            setContentTitle(getString(R.string.background_nr_notification_running_title))
+            setContentText(getString(R.string.background_nr_notification_running_description))
             setSmallIcon(R.drawable.android_nr_supporter)
             // グループ
             setGroup(NOTIFICATION_RUNNING_GROUP_KEY)
             // 通知押したとき
             setContentIntent(PendingIntent.getActivity(this@BackgroundNrSupporter, 1, Intent(this@BackgroundNrSupporter, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE))
             // 終了ボタン
-            addAction(R.drawable.ic_outline_close_24, getString(R.string.background_nr_notification_exit), PendingIntent.getBroadcast(this@BackgroundNrSupporter, 1, Intent(STOP_SERVICE_BROADCAST), PendingIntent.FLAG_IMMUTABLE))
+            addAction(
+                R.drawable.ic_outline_close_24,
+                getString(R.string.background_nr_notification_exit),
+                PendingIntent.getBroadcast(this@BackgroundNrSupporter, 1, Intent(STOP_SERVICE_BROADCAST), PendingIntent.FLAG_IMMUTABLE)
+            )
+            // 通知設定
+            addAction(
+                R.drawable.ic_outline_mark_chat_unread_24,
+                getString(R.string.background_nr_notification_setting),
+                PendingIntent.getActivity(this@BackgroundNrSupporter, 1, Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply { putExtra(Settings.EXTRA_APP_PACKAGE, packageName) }, PendingIntent.FLAG_IMMUTABLE)
+            )
         }.build()
     }
 
@@ -154,7 +165,17 @@ class BackgroundNrSupporter : Service() {
             // 展開時に文字を多く表示させる
             setStyle(NotificationCompat.BigTextStyle().bigText("$networkType\n$bandText"))
             // 終了ボタン
-            addAction(R.drawable.ic_outline_close_24, getString(R.string.background_nr_notification_exit), PendingIntent.getBroadcast(this@BackgroundNrSupporter, 1, Intent(STOP_SERVICE_BROADCAST), PendingIntent.FLAG_IMMUTABLE))
+            addAction(
+                R.drawable.ic_outline_close_24,
+                getString(R.string.background_nr_notification_exit),
+                PendingIntent.getBroadcast(this@BackgroundNrSupporter, 1, Intent(STOP_SERVICE_BROADCAST), PendingIntent.FLAG_IMMUTABLE)
+            )
+            // 通知設定
+            addAction(
+                R.drawable.ic_outline_mark_chat_unread_24,
+                getString(R.string.background_nr_notification_setting),
+                PendingIntent.getActivity(this@BackgroundNrSupporter, 1, Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply { putExtra(Settings.EXTRA_APP_PACKAGE, packageName) }, PendingIntent.FLAG_IMMUTABLE)
+            )
         }.build()
     }
 

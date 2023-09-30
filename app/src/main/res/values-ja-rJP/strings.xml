@@ -38,5 +38,7 @@
     <string name="widget_update_message">更新ボタンを押してください</string>
     <string name="background_nr_notification_title">バックグラウンド 5G 通知機能</string>
     <string name="background_nr_notification_running_title">バックグラウンド 5G 通知機能の実行中通知</string>
+    <string name="background_nr_notification_running_description">バックグラウンド 5G 通知機能が実行中です。端末の通知設定から 5G 通知のみ表示できます。</string>
     <string name="background_nr_notification_exit">終了</string>
+    <string name="background_nr_notification_setting">通知設定</string>
 </resources>

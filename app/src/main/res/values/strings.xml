@@ -37,5 +37,7 @@
     <string name="widget_update_message">Please press the update button</string>
     <string name="background_nr_notification_title">Background 5G monitoring function</string>
     <string name="background_nr_notification_running_title">Background 5G notification feature running notification</string>
+    <string name="background_nr_notification_running_description">Background 5G notification feature is running. You can only display 5G notifications from your device\'s notification settings.</string>
     <string name="background_nr_notification_exit">exit</string>
+    <string name="background_nr_notification_setting">Notification settings</string>
 </resources>
