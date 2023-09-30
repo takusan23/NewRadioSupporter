@@ -55,7 +55,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
 
             // バックグラウンド 5G 通知機能の権限ダイアログ
             if (isOpenBackgroundPermissionDialog.value) {
-                BackgroundLocationPermissionDialog(
+                BackgroundNrPermissionDialog(
                     onDismissRequest = { isOpenBackgroundPermissionDialog.value = false },
                     onGranted = { BackgroundNrSupporter.toggleService(context) }
                 )

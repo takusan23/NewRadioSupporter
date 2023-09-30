@@ -41,4 +41,10 @@
     <string name="background_nr_notification_running_description">バックグラウンド 5G 通知機能が実行中です。端末の通知設定から 5G 通知のみ表示できます。</string>
     <string name="background_nr_notification_exit">終了</string>
     <string name="background_nr_notification_setting">通知設定</string>
+    <string name="background_nr_permission_notification_title">バックグラウンドで動かすために「通知を出す権限」が必要です</string>
+    <string name="background_nr_permission_notification_description">ダイアログが出るので、許可を与えてください。\n\nこれらは、バックグラウンドで 5G の状態を通知するためにのみ使われます。\nバックグラウンド 5G 通知機能を利用しない場合はこの権限は不要です。</string>
+    <string name="background_nr_permission_location_title">バックグラウンドで動かすために「バックグラウンドで位置情報を取得できる権限」が必要です</string>
+    <string name="background_nr_permission_location_description">位置情報の設定画面に遷移するので、「%s」を選んでください。\n\nこれらは、バックグラウンドで 5G の状態を通知するためにのみ使われます。\nバックグラウンド 5G 通知機能を利用しない場合はこの権限は不要です。</string>
+    <string name="background_nr_permission_dialog_confirm">権限を付与する</string>
+    <string name="background_nr_permission_dialog_dismiss">戻る</string>
 </resources>

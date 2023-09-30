@@ -40,4 +40,10 @@
     <string name="background_nr_notification_running_description">Background 5G notification feature is running. You can only display 5G notifications from your device\'s notification settings.</string>
     <string name="background_nr_notification_exit">exit</string>
     <string name="background_nr_notification_setting">Notification settings</string>
+    <string name="background_nr_permission_notification_title">"Permission to send notifications" is required to run in the background</string>
+    <string name="background_nr_permission_notification_description">A dialog will appear, please give permission.\n\nThese are only used to notify you of 5G status in the background.\nThis permission is not required if you do not use the notification function.</string>
+    <string name="background_nr_permission_location_title">To run in the background, you need "permission to acquire location information in the background"</string>
+    <string name="background_nr_permission_location_description">You will be redirected to the location information settings screen, so select "%s".\n\nThese are only used to notify you of 5G status in the background.\nThis permission is not required if you do not use the notification function.</string>
+    <string name="background_nr_permission_dialog_confirm">Grant permission</string>
+    <string name="background_nr_permission_dialog_dismiss">Back</string>
 </resources>

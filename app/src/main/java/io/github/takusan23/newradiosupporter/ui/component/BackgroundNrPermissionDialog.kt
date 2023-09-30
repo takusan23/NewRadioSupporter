@@ -1,6 +1,5 @@
 package io.github.takusan23.newradiosupporter.ui.component
 
-import android.annotation.SuppressLint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -15,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.tool.PermissionCheckTool
@@ -26,9 +26,8 @@ import io.github.takusan23.newradiosupporter.tool.PermissionCheckTool
  * @param onDismissRequest ダイアログを消そうとしたら呼ばれる
  * @param onGranted 権限が全て揃ったら呼ばれる
  */
-@SuppressLint("InlinedApi")
 @Composable
-fun BackgroundLocationPermissionDialog(
+fun BackgroundNrPermissionDialog(
     modifier: Modifier = Modifier,
     onDismissRequest: () -> Unit,
     onGranted: () -> Unit
@@ -51,15 +50,10 @@ fun BackgroundLocationPermissionDialog(
         // 通知権限がない
         if (!isGrantedNotificationPermission.value) {
             PermissionDialog(
-                title = "バックグラウンドで動かすために「通知を出す権限」が必要です",
-                description = """
-                ダイアログが出るので、許可を与えてください。
-                
-                これらは、バックグラウンドで 5G の状態を通知するためにのみ使われます。
-                バックグラウンド 5G 通知機能を利用しない場合はこれらの権限は不要です。
-            """.trimIndent(),
+                title = stringResource(id = R.string.background_nr_permission_notification_title),
+                description = stringResource(id = R.string.background_nr_permission_notification_description),
                 permission = android.Manifest.permission.POST_NOTIFICATIONS,
-                onResult = { isGrantedNotificationPermission.value = true },
+                onResult = { isGranted -> isGrantedNotificationPermission.value = isGranted },
                 onDismissRequest = onDismissRequest
             )
             return
@@ -68,15 +62,11 @@ fun BackgroundLocationPermissionDialog(
         // バックグラウンド位置情報取得権限がない
         if (!isGrantedBackgroundPermission.value) {
             PermissionDialog(
-                title = "バックグラウンドで動かすために「バックグラウンドで位置情報を取得できる権限」が必要です",
-                description = """
-                位置情報の設定画面に遷移するので、「%s」を選んでください。
-                
-                これらは、バックグラウンドで 5G の状態を通知するためにのみ使われます。
-                バックグラウンド 5G 通知機能を利用しない場合はこれらの権限は不要です。
-            """.trimIndent().format(context.packageManager.backgroundPermissionOptionLabel),
+                title = stringResource(id = R.string.background_nr_permission_location_title),
+                // %s で backgroundPermissionOptionLabel を埋め込む
+                description = stringResource(id = R.string.background_nr_permission_location_description).format(context.packageManager.backgroundPermissionOptionLabel),
                 permission = android.Manifest.permission.ACCESS_BACKGROUND_LOCATION,
-                onResult = { isGrantedBackgroundPermission.value = true },
+                onResult = { isGranted -> isGrantedBackgroundPermission.value = isGranted },
                 onDismissRequest = onDismissRequest
             )
             return
@@ -84,6 +74,16 @@ fun BackgroundLocationPermissionDialog(
     }
 }
 
+/**
+ * 権限をリクエスト機能を持ったダイアログ
+ *
+ * @param modifier [Modifier]
+ * @param title タイトル
+ * @param description 説明
+ * @param permission 権限 [android.Manifest.permission]
+ * @param onResult 権限をもらえたか
+ * @param onDismissRequest ダイアログを消したい時に呼ばれる
+ */
 @Composable
 private fun PermissionDialog(
     modifier: Modifier = Modifier,
@@ -94,6 +94,7 @@ private fun PermissionDialog(
     onDismissRequest: () -> Unit,
 ) {
     val permissionRequest = rememberLauncherForActivityResult(contract = ActivityResultContracts.RequestPermission(), onResult)
+
     AlertDialog(
         modifier = modifier,
         onDismissRequest = onDismissRequest,
@@ -108,12 +109,12 @@ private fun PermissionDialog(
         confirmButton = {
             TextButton(
                 onClick = { permissionRequest.launch(permission) }
-            ) { Text("権限を付与する") }
+            ) { Text(stringResource(id = R.string.background_nr_permission_dialog_confirm)) }
         },
         dismissButton = {
             TextButton(
                 onClick = onDismissRequest
-            ) { Text("戻る") }
+            ) { Text(stringResource(id = R.string.background_nr_permission_dialog_dismiss)) }
         }
     )
 }
