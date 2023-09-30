@@ -24,7 +24,7 @@ class NetworkStatusFlowTest {
     fun setUp() {
         // mockk を使うと kotlin の object もモックできる
         mockkObject(PermissionCheckTool)
-        every { PermissionCheckTool.isGranted(any()) }.returns(true)
+        every { PermissionCheckTool.isGrantedPermission(any()) }.returns(true)
     }
 
     @Test

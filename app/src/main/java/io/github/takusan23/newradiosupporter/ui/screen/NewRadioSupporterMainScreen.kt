@@ -18,7 +18,7 @@ fun NewRadioSupporterMainScreen() {
         // ナビゲーション
         val navController = rememberNavController()
         // 権限なければ権限画面へ
-        val startDestination = if (PermissionCheckTool.isGranted(context)) NavigationLinkList.HomeScreen else NavigationLinkList.PermissionScreen
+        val startDestination = if (PermissionCheckTool.isGrantedPermission(context)) NavigationLinkList.HomeScreen else NavigationLinkList.PermissionScreen
 
         NavHost(navController = navController, startDestination = startDestination) {
             composable(NavigationLinkList.PermissionScreen) {

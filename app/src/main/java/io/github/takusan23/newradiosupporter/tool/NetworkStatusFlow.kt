@@ -248,7 +248,7 @@ object NetworkStatusFlow {
     @SuppressLint("MissingPermission")
     private fun collectMultipleSimSubscriptionIdList(context: Context) = callbackFlow {
         val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
-        if (PermissionCheckTool.isGranted(context)) {
+        if (PermissionCheckTool.isGrantedPermission(context)) {
             // 多分 SubscriptionInfo が更新されたら呼び出される
             val subscriptionInfoCallback = object : SubscriptionManager.OnSubscriptionsChangedListener() {
                 override fun onSubscriptionsChanged() {
