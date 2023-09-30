@@ -61,8 +61,8 @@ class BackgroundNrSupporter : Service() {
             addAction(STOP_SERVICE_BROADCAST)
         }, ContextCompat.RECEIVER_EXPORTED) // システム（通知押した時）のブロードキャストは exported じゃないとダメ？
 
-        // Flow で監視
         scope.launch {
+            // Flow で監視
             NetworkStatusFlow.collectMultipleNetworkStatus(this@BackgroundNrSupporter).collect { statusDataList ->
                 statusDataList.forEachIndexed { index, statusData ->
                     val (_, band, type, _) = statusData
@@ -131,10 +131,7 @@ class BackgroundNrSupporter : Service() {
             setStyle(NotificationCompat.BigTextStyle().bigText("$networkType\n$bandText"))
             // 終了ボタン
             addAction(R.drawable.ic_outline_close_24, "終了", PendingIntent.getBroadcast(this@BackgroundNrSupporter, 1, Intent(STOP_SERVICE_BROADCAST), PendingIntent.FLAG_IMMUTABLE))
-        }.build().apply {
-            // 消せないように。サービス終了時に消える
-            flags = NotificationCompat.FLAG_NO_CLEAR
-        }
+        }.build()
     }
 
     companion object {

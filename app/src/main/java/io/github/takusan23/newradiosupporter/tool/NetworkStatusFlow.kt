@@ -156,9 +156,11 @@ object NetworkStatusFlow {
             // Qualcomm Snapdragon の場合、配列のどっかに CellInfoNr があるみたい。
             // で、 Qualcomm Snapdragon の場合で CellInfoNr が取れない場合がある（ CellSignalStrengthNr だけ取れる。バンドとかは取れないけど5Gの電波強度が取れる？）
             // ない場合は 4G か アンカーバンド？
-            val bandData = cellInfoList.filterIsInstance<CellInfoNr>().firstOrNull()?.let { convertBandData(it, carrierName) }
-                ?: cellInfoList.firstOrNull()?.let { convertBandData(it, carrierName) }
-                ?: return@runCatching null // BandData 取れない場合は何もできないので return してしまう
+            val bandData = cellInfoList.filterIsInstance<CellInfoNr>().firstOrNull()?.let {
+                convertBandData(it, carrierName)
+            } ?: cellInfoList.firstOrNull()?.let {
+                convertBandData(it, carrierName)
+            } ?: return@runCatching null // BandData 取れない場合は何もできないので return してしまう
 
             val nrType = when {
                 // 4Gの場合の処理
