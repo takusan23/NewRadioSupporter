@@ -29,8 +29,8 @@ fun BackgroundServiceItem(
     ) {
         CommonItem(
             icon = painterResource(id = R.drawable.ic_outline_mark_chat_unread_24),
-            title = stringResource(id = R.string.service_state_button),
-            description = stringResource(id = R.string.background_service_description),
+            title = stringResource(id = R.string.background_nr_notification_button),
+            description = stringResource(id = R.string.background_nr_notification_description),
         )
     }
 }

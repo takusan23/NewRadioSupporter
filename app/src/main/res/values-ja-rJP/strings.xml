@@ -7,8 +7,8 @@
     <string name="license">ライセンス</string>
     <string name="open_sourcecode">ソースコードを見る</string>
     <string name="open_sourcecode_description">GitHubで開きます</string>
-    <string name="service_state_button">サービスの起動・終了</string>
-    <string name="background_service_description">バックグラウンドで5Gネットワークを監視する</string>
+    <string name="background_nr_notification_button">バックグラウンド 5G 通知機能の ON / OFF</string>
+    <string name="background_nr_notification_description">バックグラウンドで5Gネットワークを監視して通知します</string>
     <string name="type_lte_anchor_band">アンカーバンドの圏内です。表示上では5Gですが、5Gの接続は確立していません。</string>
     <string name="type_nr_sub6">5GのSub6ネットワークに接続中です。</string>
     <string name="type_nr_mmwave">5Gのミリ波ネットワークに接続中です。</string>
@@ -36,4 +36,7 @@
     <string name="open_mobile_data_setting_screen_title">モバイルデータの設定画面を開く</string>
     <string name="new_radio_supporter_widget_description">ホーム画面で5Gを確認できます</string>
     <string name="widget_update_message">更新ボタンを押してください</string>
+    <string name="background_nr_notification_title">バックグラウンド 5G 通知機能</string>
+    <string name="background_nr_notification_running_title">バックグラウンド 5G 通知機能の実行中通知</string>
+    <string name="background_nr_notification_exit">終了</string>
 </resources>

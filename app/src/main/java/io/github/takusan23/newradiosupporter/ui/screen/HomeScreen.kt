@@ -41,15 +41,6 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
     // バックグラウンドの権限ダイアログを出すか
     val isOpenBackgroundPermissionDialog = remember { mutableStateOf(false) }
 
-    // バックグラウンド監視を始めるか
-    fun toggleBackgroundService() {
-        if (BackgroundNrSupporter.isServiceRunning(context)) {
-            BackgroundNrSupporter.stopService(context)
-        } else {
-            BackgroundNrSupporter.startService(context)
-        }
-    }
-
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -60,15 +51,13 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             )
         }
     ) {
-        Box(
-            modifier = Modifier.padding(it)
-        ) {
+        Box(modifier = Modifier.padding(it)) {
 
             // バックグラウンド 5G 通知機能の権限ダイアログ
             if (isOpenBackgroundPermissionDialog.value) {
                 BackgroundLocationPermissionDialog(
                     onDismissRequest = { isOpenBackgroundPermissionDialog.value = false },
-                    onGranted = { toggleBackgroundService() }
+                    onGranted = { BackgroundNrSupporter.toggleService(context) }
                 )
             }
 
@@ -126,7 +115,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                         onClick = {
                             // 権限があれば起動
                             if (PermissionCheckTool.isGrantedNotificationPermission(context) && PermissionCheckTool.isGrantedBackgroundLocationPermission(context)) {
-                                toggleBackgroundService()
+                                BackgroundNrSupporter.toggleService(context)
                             } else {
                                 isOpenBackgroundPermissionDialog.value = true
                             }

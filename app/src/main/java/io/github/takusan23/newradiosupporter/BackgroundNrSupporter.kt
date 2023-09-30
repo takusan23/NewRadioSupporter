@@ -1,8 +1,8 @@
 package io.github.takusan23.newradiosupporter
 
 import android.Manifest
+import android.app.ActivityManager
 import android.app.Notification
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.BroadcastReceiver
@@ -23,6 +23,7 @@ import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 /**
@@ -53,8 +54,8 @@ class BackgroundNrSupporter : Service() {
             }
         }
 
-        // とりあえず殺される前に通知出す
-        startForegroundCompat(showNotification(null, null))
+        // フォアグラウンドサービス実行中通知を出す
+        startForegroundCompat(createRunningNotification())
 
         // ブロードキャスト登録
         ContextCompat.registerReceiver(this, broadcastReceiver, IntentFilter().apply {
@@ -62,22 +63,19 @@ class BackgroundNrSupporter : Service() {
         }, ContextCompat.RECEIVER_EXPORTED) // システム（通知押した時）のブロードキャストは exported じゃないとダメ？
 
         scope.launch {
-            // Flow で監視
-            NetworkStatusFlow.collectMultipleNetworkStatus(this@BackgroundNrSupporter).collect { statusDataList ->
-                statusDataList.forEachIndexed { index, statusData ->
-                    val (_, band, type, _) = statusData
-                    val notification = showNotification(band, type)
-                    if (index == 0) {
-                        // 1枚目のSIMはフォアグラウンドサービス通知のために出す
-                        startForegroundCompat(notification)
-                    } else {
-                        // 2 枚目は通知として出す
+            // Flow で監視。変化時のみ通知を出す
+            NetworkStatusFlow.collectMultipleNetworkStatus(this@BackgroundNrSupporter)
+                .distinctUntilChanged()
+                .collect { statusDataList ->
+                    statusDataList.forEachIndexed { index, statusData ->
+                        val (_, band, type, _) = statusData
+                        val notification = createNetworkStatusNotification(band, type)
+
                         if (ContextCompat.checkSelfPermission(this@BackgroundNrSupporter, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-                            notificationManagerCompat.notify(NOTIFICATION_ID + index, notification)
+                            notificationManagerCompat.notify(NOTIFICATION_ID + (index + 1), notification)
                         }
                     }
                 }
-            }
         }
     }
 
@@ -92,16 +90,40 @@ class BackgroundNrSupporter : Service() {
         unregisterReceiver(broadcastReceiver)
     }
 
-    /** 通知を組み立てて、返す */
-    private fun showNotification(bandData: BandData?, finalNRType: FinalNrType?): Notification {
-        val channelId = "io.github.takusan23.newradiosupporter.NR_SERVICE_NOTIFICATION"
-        val channel = NotificationChannelCompat.Builder(channelId, NotificationManagerCompat.IMPORTANCE_LOW).apply {
-            setName("バックグラウンド5G通知")
-        }.build()
-        if (notificationManagerCompat.getNotificationChannel(channelId) == null) {
-            notificationManagerCompat.createNotificationChannel(channel)
+    /** サービス実行中の通知を出す */
+    private fun createRunningNotification(): Notification {
+        // startForeground 用の通知チャンネルを作成する
+        if (notificationManagerCompat.getNotificationChannel(NOTIFICATION_RUNNING_CHANNEL_ID) == null) {
+            notificationManagerCompat.createNotificationChannel(
+                NotificationChannelCompat.Builder(NOTIFICATION_RUNNING_CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_LOW).apply {
+                    setName(getString(R.string.background_nr_notification_running_title))
+                }.build()
+            )
         }
-        return NotificationCompat.Builder(this, channelId).apply {
+        return NotificationCompat.Builder(this, NOTIFICATION_RUNNING_CHANNEL_ID).apply {
+            setContentTitle("バックグラウンド 5G 通知機能")
+            setContentText("バックグラウンド 5G 通知機能が実行中です。")
+            setSmallIcon(R.drawable.android_nr_supporter)
+            // グループ
+            setGroup(NOTIFICATION_RUNNING_GROUP_KEY)
+            // 通知押したとき
+            setContentIntent(PendingIntent.getActivity(this@BackgroundNrSupporter, 1, Intent(this@BackgroundNrSupporter, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE))
+            // 終了ボタン
+            addAction(R.drawable.ic_outline_close_24, getString(R.string.background_nr_notification_exit), PendingIntent.getBroadcast(this@BackgroundNrSupporter, 1, Intent(STOP_SERVICE_BROADCAST), PendingIntent.FLAG_IMMUTABLE))
+        }.build()
+    }
+
+    /** 通知を組み立てて、返す */
+    private fun createNetworkStatusNotification(bandData: BandData?, finalNRType: FinalNrType?): Notification {
+        // 通知チャンネルを作成する
+        if (notificationManagerCompat.getNotificationChannel(NOTIFICATION_CHANNEL_ID) == null) {
+            notificationManagerCompat.createNotificationChannel(
+                NotificationChannelCompat.Builder(NOTIFICATION_CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_LOW).apply {
+                    setName(getString(R.string.background_nr_notification_title))
+                }.build()
+            )
+        }
+        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).apply {
             val networkType = when (finalNRType) {
                 FinalNrType.ANCHOR_BAND -> getString(R.string.type_lte_anchor_band)
                 FinalNrType.NR_LTE_FREQUENCY -> getString(R.string.type_lte_freq_nr)
@@ -125,35 +147,60 @@ class BackgroundNrSupporter : Service() {
                     else -> R.drawable.ic_outline_error_outline_24
                 }
             )
+            // グループ
+            setGroup(NOTIFICATION_GROUP_KEY)
             // 通知押したとき
             setContentIntent(PendingIntent.getActivity(this@BackgroundNrSupporter, 1, Intent(this@BackgroundNrSupporter, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE))
             // 展開時に文字を多く表示させる
             setStyle(NotificationCompat.BigTextStyle().bigText("$networkType\n$bandText"))
             // 終了ボタン
-            addAction(R.drawable.ic_outline_close_24, "終了", PendingIntent.getBroadcast(this@BackgroundNrSupporter, 1, Intent(STOP_SERVICE_BROADCAST), PendingIntent.FLAG_IMMUTABLE))
+            addAction(R.drawable.ic_outline_close_24, getString(R.string.background_nr_notification_exit), PendingIntent.getBroadcast(this@BackgroundNrSupporter, 1, Intent(STOP_SERVICE_BROADCAST), PendingIntent.FLAG_IMMUTABLE))
         }.build()
     }
 
     companion object {
+
+        private const val NOTIFICATION_CHANNEL_ID = "io.github.takusan23.newradiosupporter.NR_SERVICE_NOTIFICATION"
+        private const val NOTIFICATION_RUNNING_CHANNEL_ID = "io.github.takusan23.newradiosupporter.NR_SERVICE_RUNNING_NOTIFICATION"
+
+        private const val NOTIFICATION_GROUP_KEY = "GROUP_KEY_NETWORK_STATUS"
+        private const val NOTIFICATION_RUNNING_GROUP_KEY = "GROUP_KEY_RUNNING"
+
 
         private const val STOP_SERVICE_BROADCAST = "io.github.takusan23.newradiosupporter.BROADCAST_SERVICE_STOP"
 
         /** 通知ID。複数SIMの場合はこの値をインクリメントしている。 */
         const val NOTIFICATION_ID = 4545
 
-        /** サービスが起動中かどうか */
-        fun isServiceRunning(context: Context): Boolean {
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            return notificationManager.activeNotifications.any { it.id == NOTIFICATION_ID }
+        /** サービス起動・終了を切り替える */
+        fun toggleService(context: Context) {
+            if (isServiceRunning(context)) {
+                stopService(context)
+            } else {
+                startService(context)
+            }
+        }
+
+        /**
+         * サービスが起動中かどうか
+         * 非推奨だが代替案がない...
+         *
+         * @param context [Context]
+         * @return 起動中なら true
+         */
+        private fun isServiceRunning(context: Context): Boolean {
+            return (context.getSystemService(ACTIVITY_SERVICE) as ActivityManager)
+                .getRunningServices(Integer.MAX_VALUE)
+                .any { it.service.className == BackgroundNrSupporter::class.java.name }
         }
 
         /** サービス起動 */
-        fun startService(context: Context) {
+        private fun startService(context: Context) {
             context.startForegroundService(Intent(context, BackgroundNrSupporter::class.java))
         }
 
         /** サービス終了 */
-        fun stopService(context: Context) {
+        private fun stopService(context: Context) {
             context.stopService(Intent(context, BackgroundNrSupporter::class.java))
         }
 
