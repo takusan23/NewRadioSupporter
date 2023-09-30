@@ -1,7 +1,7 @@
 package io.github.takusan23.newradiosupporter.tool.data
 
 /**
- * [io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow.collectNetworkStatus]の返り値
+ * ネットワークの状態のデータクラス
  *
  * @param simSlotIndex SIMカードスロット番号
  * @param bandData 接続中バンド情報

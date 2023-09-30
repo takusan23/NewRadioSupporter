@@ -36,7 +36,6 @@ object NetworkStatusFlow {
 
     /**
      * [collectMultipleSimSubscriptionIdList]と[collectNetworkStatus]の合体版
-     * TODO テストを書く
      *
      * @param context [Context]
      * @return SIM カードの枚数分 [NetworkStatusData] を返す [Flow]。SIM カードが変化しても購読できる。
@@ -76,7 +75,7 @@ object NetworkStatusFlow {
      * @param subscriptionId SIMカードを指定する場合は[SubscriptionInfo.getSubscriptionId]を入れる。狙ったSIMカードの回線状況が取得できます。
      */
     @SuppressLint("MissingPermission")
-    fun collectNetworkStatus(
+    private fun collectNetworkStatus(
         context: Context,
         subscriptionId: Int = SubscriptionManager.DEFAULT_SUBSCRIPTION_ID
     ) = callbackFlow {
@@ -209,13 +208,14 @@ object NetworkStatusFlow {
      * @see [SubscriptionManager.DEFAULT_SUBSCRIPTION_ID]
      */
     @SuppressLint("MissingPermission")
-    fun collectMultipleSimSubscriptionIdList(context: Context) = callbackFlow {
+    private fun collectMultipleSimSubscriptionIdList(context: Context) = callbackFlow {
         val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
         if (PermissionCheckTool.isGranted(context)) {
             // 多分 SubscriptionInfo が更新されたら呼び出される
             val subscriptionInfoCallback = object : SubscriptionManager.OnSubscriptionsChangedListener() {
                 override fun onSubscriptionsChanged() {
-                    super.onSubscriptionsChanged()
+                    // テストが通らないので runCatching
+                    runCatching { super.onSubscriptionsChanged() }
                     val subscriptionIdOrDefaultIdList = subscriptionManager.activeSubscriptionInfoList
                         .map { it.subscriptionId }
                         .ifEmpty { listOf(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID) }

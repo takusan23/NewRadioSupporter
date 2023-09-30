@@ -16,7 +16,7 @@ import org.junit.Before
 import org.junit.Test
 
 /**
- * [NetworkStatusFlow.collectNetworkStatus]のテスト
+ * [NetworkStatusFlow.collectMultipleNetworkStatus]のテスト
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class NetworkStatusFlowTest {
@@ -70,12 +70,12 @@ class NetworkStatusFlowTest {
             every { mainExecutor }.returns(mockk())
         }
 
-        val networkStatusData = NetworkStatusFlow.collectNetworkStatus(context).first()!!
-        Assert.assertEquals(networkStatusData.finalNRType, FinalNrType.NR_SUB6)
-        Assert.assertEquals(networkStatusData.finalNRType.isNr, true)
-        Assert.assertEquals(networkStatusData.bandData.isNR, true)
-        Assert.assertEquals(networkStatusData.bandData.band, "n78")
-        Assert.assertEquals(networkStatusData.bandData.earfcn, 643334)
+        val (firstSimNetworkStatusData, _) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first()
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType, FinalNrType.NR_SUB6)
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType.isNr, true)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.isNR, true)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.band, "n78")
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.earfcn, 643334)
     }
 
     @Test
@@ -119,12 +119,12 @@ class NetworkStatusFlowTest {
             every { mainExecutor }.returns(mockk())
         }
 
-        val networkStatusData = NetworkStatusFlow.collectNetworkStatus(context).first()!!
-        Assert.assertEquals(networkStatusData.finalNRType, FinalNrType.NR_MMW)
-        Assert.assertEquals(networkStatusData.bandData.isNR, true)
-        Assert.assertEquals(networkStatusData.finalNRType.isNr, true)
-        Assert.assertEquals(networkStatusData.bandData.band, "n257")
-        Assert.assertEquals(networkStatusData.bandData.earfcn, 2070015)
+        val (firstSimNetworkStatusData, _) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first()
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType, FinalNrType.NR_MMW)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.isNR, true)
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType.isNr, true)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.band, "n257")
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.earfcn, 2070015)
     }
 
     @Test
@@ -168,12 +168,12 @@ class NetworkStatusFlowTest {
             every { mainExecutor }.returns(mockk())
         }
 
-        val networkStatusData = NetworkStatusFlow.collectNetworkStatus(context).first()!!
-        Assert.assertEquals(networkStatusData.finalNRType, FinalNrType.NR_LTE_FREQUENCY)
-        Assert.assertEquals(networkStatusData.bandData.isNR, true)
-        Assert.assertEquals(networkStatusData.finalNRType.isNr, true)
-        Assert.assertEquals(networkStatusData.bandData.band, "n28")
-        Assert.assertEquals(networkStatusData.bandData.earfcn, 157690)
+        val (firstSimNetworkStatusData, _) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first()
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType, FinalNrType.NR_LTE_FREQUENCY)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.isNR, true)
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType.isNr, true)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.band, "n28")
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.earfcn, 157690)
     }
 
     @Test
@@ -220,12 +220,12 @@ class NetworkStatusFlowTest {
             every { mainExecutor }.returns(mockk())
         }
 
-        val networkStatusData = NetworkStatusFlow.collectNetworkStatus(context).first()!!
-        Assert.assertEquals(networkStatusData.finalNRType, FinalNrType.ANCHOR_BAND)
-        Assert.assertEquals(networkStatusData.bandData.isNR, false)
-        Assert.assertEquals(networkStatusData.finalNRType.isNr, false)
-        Assert.assertEquals(networkStatusData.bandData.band, "3")
-        Assert.assertEquals(networkStatusData.bandData.earfcn, 1500)
+        val (firstSimNetworkStatusData, _) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first()
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType, FinalNrType.ANCHOR_BAND)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.isNR, false)
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType.isNr, false)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.band, "3")
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.earfcn, 1500)
     }
 
     @Test
@@ -268,11 +268,11 @@ class NetworkStatusFlowTest {
             every { mainExecutor }.returns(mockk())
         }
 
-        val networkStatusData = NetworkStatusFlow.collectNetworkStatus(context).first()!!
-        Assert.assertEquals(networkStatusData.finalNRType, FinalNrType.MAYBE_NR)
-        Assert.assertEquals(networkStatusData.bandData.isNR, false)
-        Assert.assertEquals(networkStatusData.bandData.band, "3")
-        Assert.assertEquals(networkStatusData.bandData.earfcn, 1500)
+        val (firstSimNetworkStatusData, _) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first()
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType, FinalNrType.MAYBE_NR)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.isNR, false)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.band, "3")
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.earfcn, 1500)
     }
 
     @Test
@@ -319,12 +319,12 @@ class NetworkStatusFlowTest {
             every { mainExecutor }.returns(mockk())
         }
 
-        val networkStatusData = NetworkStatusFlow.collectNetworkStatus(context).first()!!
-        Assert.assertEquals(networkStatusData.finalNRType, FinalNrType.NR_SUB6)
-        Assert.assertEquals(networkStatusData.nrStandAloneType, NrStandAloneType.NON_STAND_ALONE)
-        Assert.assertEquals(networkStatusData.bandData.isNR, true)
-        Assert.assertEquals(networkStatusData.bandData.band, "n78")
-        Assert.assertEquals(networkStatusData.bandData.earfcn, 643334)
+        val (firstSimNetworkStatusData, _) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first()
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType, FinalNrType.NR_SUB6)
+        Assert.assertEquals(firstSimNetworkStatusData.nrStandAloneType, NrStandAloneType.NON_STAND_ALONE)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.isNR, true)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.band, "n78")
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.earfcn, 643334)
     }
 
     @Test
@@ -371,12 +371,12 @@ class NetworkStatusFlowTest {
             every { mainExecutor }.returns(mockk())
         }
 
-        val networkStatusData = NetworkStatusFlow.collectNetworkStatus(context).first()!!
-        Assert.assertEquals(networkStatusData.finalNRType, FinalNrType.NR_SUB6)
-        Assert.assertEquals(networkStatusData.nrStandAloneType, NrStandAloneType.STAND_ALONE)
-        Assert.assertEquals(networkStatusData.bandData.isNR, true)
-        Assert.assertEquals(networkStatusData.bandData.band, "n79")
-        Assert.assertEquals(networkStatusData.bandData.earfcn, 703392)
+        val (firstSimNetworkStatusData, _) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first()
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType, FinalNrType.NR_SUB6)
+        Assert.assertEquals(firstSimNetworkStatusData.nrStandAloneType, NrStandAloneType.STAND_ALONE)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.isNR, true)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.band, "n79")
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.earfcn, 703392)
     }
 
     @Test
@@ -420,11 +420,11 @@ class NetworkStatusFlowTest {
             every { mainExecutor }.returns(mockk())
         }
 
-        val networkStatusData = NetworkStatusFlow.collectNetworkStatus(context).first()!!
-        Assert.assertEquals(networkStatusData.finalNRType, FinalNrType.ANCHOR_BAND)
-        Assert.assertEquals(networkStatusData.bandData.isNR, false)
-        Assert.assertEquals(networkStatusData.bandData.band, "3")
-        Assert.assertEquals(networkStatusData.bandData.earfcn, 1500)
+        val (firstSimNetworkStatusData, _) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first()
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType, FinalNrType.ANCHOR_BAND)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.isNR, false)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.band, "3")
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.earfcn, 1500)
     }
 
     @Test
@@ -467,11 +467,11 @@ class NetworkStatusFlowTest {
             every { mainExecutor }.returns(mockk())
         }
 
-        val networkStatusData = NetworkStatusFlow.collectNetworkStatus(context).first()!!
-        Assert.assertEquals(networkStatusData.finalNRType, FinalNrType.MAYBE_NR)
-        Assert.assertEquals(networkStatusData.bandData.isNR, false)
-        Assert.assertEquals(networkStatusData.bandData.band, "3")
-        Assert.assertEquals(networkStatusData.bandData.earfcn, 1500)
+        val (firstSimNetworkStatusData, _) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first()
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType, FinalNrType.MAYBE_NR)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.isNR, false)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.band, "3")
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.earfcn, 1500)
     }
 
     /** [SubscriptionManager]をモックする */
@@ -480,7 +480,7 @@ class NetworkStatusFlowTest {
         every { getActiveSubscriptionInfo(any()) }.returns(mockk<SubscriptionInfo>().apply {
             every { simSlotIndex }.returns(0)
         })
-        every { activeSubscriptionInfoList }.returns((0 until 1).map { index ->
+        every { activeSubscriptionInfoList }.returns((0 until 2).map { index ->
             mockk<SubscriptionInfo>().apply {
                 every { subscriptionId }.returns(index)
             }
@@ -489,6 +489,6 @@ class NetworkStatusFlowTest {
         every { addOnSubscriptionsChangedListener(any(), any()) }.answers { call ->
             (call.invocation.args[1] as SubscriptionManager.OnSubscriptionsChangedListener).onSubscriptionsChanged()
         }
-        every { removeOnSubscriptionsChangedListener(any()) }
+        every { removeOnSubscriptionsChangedListener(any()) }.returns(Unit)
     }
 }
