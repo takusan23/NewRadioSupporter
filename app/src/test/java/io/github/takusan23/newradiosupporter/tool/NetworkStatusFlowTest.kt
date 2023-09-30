@@ -4,7 +4,6 @@ import android.content.Context
 import android.telephony.*
 import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
 import io.github.takusan23.newradiosupporter.tool.data.NrStandAloneType
-import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -48,20 +47,23 @@ class NetworkStatusFlowTest {
             every { registerTelephonyCallback(any(), any()) }.answers { call ->
                 (call.invocation.args[1] as TelephonyCallback.CellInfoListener).onCellInfoChanged(emptyList())
             }
+            // モックした CellInfo を返す
+            every { requestCellInfoUpdate(any(), any()) }.answers { call ->
+                (call.invocation.args[1] as TelephonyManager.CellInfoCallback).onCellInfo(
+                    listOf(
+                        mockk<CellInfoNr>().apply {
+                            every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
+                                every { nrarfcn }.returns(643334)
+                                every { operatorAlphaShort }.returns("docomo")
+                                every { bands }.returns(intArrayOf())
+                            })
+                        },
+                        // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
+                        mockk<CellInfoLte>()
+                    )
+                )
+            }
         }
-
-        // 返り値をモックする
-        val cellInfoNr = mockk<CellInfoNr>().apply {
-            every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
-                every { nrarfcn }.returns(643334)
-                every { operatorAlphaShort }.returns("docomo")
-                every { bands }.returns(intArrayOf())
-            })
-        }
-        // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
-        val cellInfoLte = mockk<CellInfoLte>()
-        // waitRequestCellInfoUpdate も適当にモックする
-        coEvery { NetworkStatusFlow.invoke("waitRequestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(listOf(cellInfoLte, cellInfoNr))
 
         // Context#getSystemService をモック
         val context = mockk<Context>().apply {
@@ -98,19 +100,23 @@ class NetworkStatusFlowTest {
             every { registerTelephonyCallback(any(), any()) }.answers { call ->
                 (call.invocation.args[1] as TelephonyCallback.CellInfoListener).onCellInfoChanged(emptyList())
             }
+            // モックした CellInfo を返す
+            every { requestCellInfoUpdate(any(), any()) }.answers { call ->
+                (call.invocation.args[1] as TelephonyManager.CellInfoCallback).onCellInfo(
+                    listOf(
+                        mockk<CellInfoNr>().apply {
+                            every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
+                                every { nrarfcn }.returns(2070015)
+                                every { operatorAlphaShort }.returns("docomo")
+                                every { bands }.returns(intArrayOf())
+                            })
+                        },
+                        // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
+                        mockk<CellInfoLte>()
+                    )
+                )
+            }
         }
-
-        val cellInfoNr = mockk<CellInfoNr>().apply {
-            every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
-                every { nrarfcn }.returns(2070015)
-                every { operatorAlphaShort }.returns("docomo")
-                every { bands }.returns(intArrayOf())
-            })
-        }
-        // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
-        val cellInfoLte = mockk<CellInfoLte>()
-        // waitRequestCellInfoUpdate も適当にモックする
-        coEvery { NetworkStatusFlow.invoke("waitRequestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(listOf(cellInfoLte, cellInfoNr))
 
         // Context#getSystemService をモック
         val context = mockk<Context>().apply {
@@ -147,19 +153,23 @@ class NetworkStatusFlowTest {
             every { registerTelephonyCallback(any(), any()) }.answers { call ->
                 (call.invocation.args[1] as TelephonyCallback.CellInfoListener).onCellInfoChanged(emptyList())
             }
+            // モックした CellInfo を返す
+            every { requestCellInfoUpdate(any(), any()) }.answers { call ->
+                (call.invocation.args[1] as TelephonyManager.CellInfoCallback).onCellInfo(
+                    listOf(
+                        mockk<CellInfoNr>().apply {
+                            every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
+                                every { nrarfcn }.returns(157690)
+                                every { operatorAlphaShort }.returns("docomo")
+                                every { bands }.returns(intArrayOf())
+                            })
+                        },
+                        // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
+                        mockk<CellInfoLte>()
+                    )
+                )
+            }
         }
-
-        val cellInfoNr = mockk<CellInfoNr>().apply {
-            every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
-                every { nrarfcn }.returns(157690)
-                every { operatorAlphaShort }.returns("docomo")
-                every { bands }.returns(intArrayOf())
-            })
-        }
-        // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
-        val cellInfoLte = mockk<CellInfoLte>()
-        // waitRequestCellInfoUpdate も適当にモックする
-        coEvery { NetworkStatusFlow.invoke("waitRequestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(listOf(cellInfoLte, cellInfoNr))
 
         // Context#getSystemService をモック
         val context = mockk<Context>().apply {
@@ -201,17 +211,20 @@ class NetworkStatusFlowTest {
                     every { overrideNetworkType }.returns(TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA)
                 })
             }
+            // モックした CellInfo を返す
+            every { requestCellInfoUpdate(any(), any()) }.answers { call ->
+                (call.invocation.args[1] as TelephonyManager.CellInfoCallback).onCellInfo(
+                    listOf(
+                        mockk<CellInfo>().apply {
+                            every { cellIdentity }.returns(mockk<CellIdentityLte>().apply {
+                                every { earfcn }.returns(1500)
+                                every { operatorAlphaShort }.returns("docomo")
+                            })
+                        }
+                    )
+                )
+            }
         }
-
-        // アンカーバンドだと LTE なので
-        val cellInfoLte = mockk<CellInfo>().apply {
-            every { cellIdentity }.returns(mockk<CellIdentityLte>().apply {
-                every { earfcn }.returns(1500)
-                every { operatorAlphaShort }.returns("docomo")
-            })
-        }
-        // waitRequestCellInfoUpdate も適当にモックする
-        coEvery { NetworkStatusFlow.invoke("waitRequestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(listOf(cellInfoLte))
 
         // Context#getSystemService をモック
         val context = mockk<Context>().apply {
@@ -249,17 +262,21 @@ class NetworkStatusFlowTest {
             every { registerTelephonyCallback(any(), any()) }.answers { call ->
                 (call.invocation.args[1] as TelephonyCallback.CellInfoListener).onCellInfoChanged(emptyList())
             }
+            // モックした CellInfo を返す
+            every { requestCellInfoUpdate(any(), any()) }.answers { call ->
+                (call.invocation.args[1] as TelephonyManager.CellInfoCallback).onCellInfo(
+                    listOf(
+                        // アンカーバンドだと LTE なので
+                        mockk<CellInfo>().apply {
+                            every { cellIdentity }.returns(mockk<CellIdentityLte>().apply {
+                                every { earfcn }.returns(1500)
+                                every { operatorAlphaShort }.returns("docomo")
+                            })
+                        }
+                    )
+                )
+            }
         }
-
-        // アンカーバンドだと LTE なので
-        val cellInfoLte = mockk<CellInfo>().apply {
-            every { cellIdentity }.returns(mockk<CellIdentityLte>().apply {
-                every { earfcn }.returns(1500)
-                every { operatorAlphaShort }.returns("docomo")
-            })
-        }
-        // waitRequestCellInfoUpdate も適当にモックする
-        coEvery { NetworkStatusFlow.invoke("waitRequestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(listOf(cellInfoLte))
 
         // Context#getSystemService をモック
         val context = mockk<Context>().apply {
@@ -297,20 +314,23 @@ class NetworkStatusFlowTest {
                     every { overrideNetworkType }.returns(TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA)
                 })
             }
+            // モックした CellInfo を返す
+            every { requestCellInfoUpdate(any(), any()) }.answers { call ->
+                (call.invocation.args[1] as TelephonyManager.CellInfoCallback).onCellInfo(
+                    listOf(
+                        mockk<CellInfoNr>().apply {
+                            every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
+                                every { nrarfcn }.returns(643334)
+                                every { operatorAlphaShort }.returns("docomo")
+                                every { bands }.returns(intArrayOf())
+                            })
+                        },
+                        // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
+                        mockk<CellInfoLte>()
+                    )
+                )
+            }
         }
-
-        // 返り値をモックする
-        val cellInfoNr = mockk<CellInfoNr>().apply {
-            every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
-                every { nrarfcn }.returns(643334)
-                every { operatorAlphaShort }.returns("docomo")
-                every { bands }.returns(intArrayOf())
-            })
-        }
-        // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
-        val cellInfoLte = mockk<CellInfoLte>()
-        // waitRequestCellInfoUpdate も適当にモックする
-        coEvery { NetworkStatusFlow.invoke("waitRequestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(listOf(cellInfoLte, cellInfoNr))
 
         // Context#getSystemService をモック
         val context = mockk<Context>().apply {
@@ -349,20 +369,23 @@ class NetworkStatusFlowTest {
                     every { overrideNetworkType }.returns(TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_ADVANCED)
                 })
             }
+            // モックした CellInfo を返す
+            every { requestCellInfoUpdate(any(), any()) }.answers { call ->
+                (call.invocation.args[1] as TelephonyManager.CellInfoCallback).onCellInfo(
+                    listOf(
+                        mockk<CellInfoNr>().apply {
+                            every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
+                                every { nrarfcn }.returns(703392)
+                                every { operatorAlphaShort }.returns("docomo")
+                                every { bands }.returns(intArrayOf())
+                            })
+                        },
+                        // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
+                        mockk<CellInfoLte>()
+                    )
+                )
+            }
         }
-
-        // 返り値をモックする
-        val cellInfoNr = mockk<CellInfoNr>().apply {
-            every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
-                every { nrarfcn }.returns(703392)
-                every { operatorAlphaShort }.returns("docomo")
-                every { bands }.returns(intArrayOf())
-            })
-        }
-        // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
-        val cellInfoLte = mockk<CellInfoLte>()
-        // waitRequestCellInfoUpdate も適当にモックする
-        coEvery { NetworkStatusFlow.invoke("waitRequestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(listOf(cellInfoLte, cellInfoNr))
 
         // Context#getSystemService をモック
         val context = mockk<Context>().apply {
@@ -377,6 +400,69 @@ class NetworkStatusFlowTest {
         Assert.assertEquals(firstSimNetworkStatusData.bandData.isNR, true)
         Assert.assertEquals(firstSimNetworkStatusData.bandData.band, "n79")
         Assert.assertEquals(firstSimNetworkStatusData.bandData.earfcn, 703392)
+    }
+
+    @Test
+    fun collectMultipleNetworkStatus_デュアルSIMに対応している() = runTest {
+        // Android 12 以上で
+        mockkObject(NetworkStatusFlow)
+        every { NetworkStatusFlow.getProperty("isAndroidSAndLater") }.returns(true)
+
+        // UnitTest で使えない Android の関数を全部モックしていく
+
+        // SIM カードの枚数分 TelephonyManager のモックを用意する
+        val (sim1TelephonyManager, sim2TelephonyManager) = mapOf(
+            SIM_1_SUBSCRIPTION_ID to SIM_1_CARRIER_NAME,
+            SIM_2_SUBSCRIPTION_ID to SIM_2_CARRIER_NAME
+        ).map { (_, carrierName) ->
+            mockk<TelephonyManager>().apply {
+                every { networkOperatorName }.returns(carrierName)
+                every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
+                every { unregisterTelephonyCallback(any()) }.returns(Unit)
+                every { signalStrength }.returns(mockk<SignalStrength>().apply {
+                    every { getCellSignalStrengths<CellSignalStrengthNr>(any()) }.returns(listOf(mockk()))
+                })
+                // コールバックを呼び出して挙動を再現する
+                every { registerTelephonyCallback(any(), any()) }.answers { call ->
+                    (call.invocation.args[1] as TelephonyCallback.CellInfoListener).onCellInfoChanged(emptyList())
+                }
+                // CellInfo 取得コールバック
+                every { requestCellInfoUpdate(any(), any()) }.answers { call ->
+                    (call.invocation.args[1] as TelephonyManager.CellInfoCallback).onCellInfo(
+                        listOf(
+                            mockk<CellInfoNr>().apply {
+                                every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
+                                    every { nrarfcn }.returns(643334)
+                                    every { operatorAlphaShort }.returns(carrierName)
+                                    every { bands }.returns(intArrayOf())
+                                })
+                            }
+                        )
+                    )
+                }
+            }
+        }
+
+        val telephonyManager = mockk<TelephonyManager>().apply {
+            every { createForSubscriptionId(eq(SIM_1_SUBSCRIPTION_ID)) }.returns(sim1TelephonyManager)
+            every { createForSubscriptionId(eq(SIM_2_SUBSCRIPTION_ID)) }.returns(sim2TelephonyManager)
+        }
+
+        // Context#getSystemService をモック
+        val context = mockk<Context>().apply {
+            every { getSystemService(eq(Context.TELEPHONY_SERVICE)) }.returns(telephonyManager)
+            every { getSystemService(eq(Context.TELEPHONY_SUBSCRIPTION_SERVICE)) }.returns(createMockSubscriptionManager())
+            every { mainExecutor }.returns(mockk())
+        }
+
+        // 2個揃うまで待つ
+        val (
+            firstSimNetworkStatusData,
+            secondSimNetworkStatusData
+        ) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first { it.size == 2 }
+
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.carrierName, SIM_1_CARRIER_NAME)
+        Assert.assertEquals(secondSimNetworkStatusData.bandData.carrierName, SIM_2_CARRIER_NAME)
     }
 
     @Test
@@ -401,17 +487,20 @@ class NetworkStatusFlowTest {
                     every { overrideNetworkType }.returns(TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_NSA)
                 })
             }
+            // CellInfo 取得コールバック
+            every { requestCellInfoUpdate(any(), any()) }.answers { call ->
+                (call.invocation.args[1] as TelephonyManager.CellInfoCallback).onCellInfo(
+                    listOf(
+                        mockk<CellInfo>().apply {
+                            every { cellIdentity }.returns(mockk<CellIdentityLte>().apply {
+                                every { earfcn }.returns(1500)
+                                every { operatorAlphaShort }.returns("docomo")
+                            })
+                        }
+                    )
+                )
+            }
         }
-
-        // 返り値をモックする
-        val cellInfoLte = mockk<CellInfo>().apply {
-            every { cellIdentity }.returns(mockk<CellIdentityLte>().apply {
-                every { earfcn }.returns(1500)
-                every { operatorAlphaShort }.returns("docomo")
-            })
-        }
-        // waitRequestCellInfoUpdate も適当にモックする
-        coEvery { NetworkStatusFlow.invoke("waitRequestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(listOf(cellInfoLte))
 
         // Context#getSystemService をモック
         val context = mockk<Context>().apply {
@@ -448,17 +537,20 @@ class NetworkStatusFlowTest {
             every { listen(any(), any()) }.answers { call ->
                 (call.invocation.args.first() as PhoneStateListener).onCellInfoChanged(emptyList())
             }
+            // CellInfo 取得コールバック
+            every { requestCellInfoUpdate(any(), any()) }.answers { call ->
+                (call.invocation.args[1] as TelephonyManager.CellInfoCallback).onCellInfo(
+                    listOf(
+                        mockk<CellInfo>().apply {
+                            every { cellIdentity }.returns(mockk<CellIdentityLte>().apply {
+                                every { earfcn }.returns(1500)
+                                every { operatorAlphaShort }.returns("docomo")
+                            })
+                        }
+                    )
+                )
+            }
         }
-
-        // 返り値をモックする
-        val cellInfoLte = mockk<CellInfo>().apply {
-            every { cellIdentity }.returns(mockk<CellIdentityLte>().apply {
-                every { earfcn }.returns(1500)
-                every { operatorAlphaShort }.returns("docomo")
-            })
-        }
-        // waitRequestCellInfoUpdate も適当にモックする
-        coEvery { NetworkStatusFlow.invoke("waitRequestCellInfoUpdate").withArguments(listOf(ofType(Context::class), ofType(TelephonyManager::class))) }.returns(listOf(cellInfoLte))
 
         // Context#getSystemService をモック
         val context = mockk<Context>().apply {
@@ -480,9 +572,9 @@ class NetworkStatusFlowTest {
         every { getActiveSubscriptionInfo(any()) }.returns(mockk<SubscriptionInfo>().apply {
             every { simSlotIndex }.returns(0)
         })
-        every { activeSubscriptionInfoList }.returns((0 until 2).map { index ->
+        every { activeSubscriptionInfoList }.returns(listOf(SIM_1_SUBSCRIPTION_ID, SIM_2_SUBSCRIPTION_ID).map { subId ->
             mockk<SubscriptionInfo>().apply {
-                every { subscriptionId }.returns(index)
+                every { subscriptionId }.returns(subId)
             }
         })
         // コールバックを呼び出す
@@ -490,5 +582,12 @@ class NetworkStatusFlowTest {
             (call.invocation.args[1] as SubscriptionManager.OnSubscriptionsChangedListener).onSubscriptionsChanged()
         }
         every { removeOnSubscriptionsChangedListener(any()) }.returns(Unit)
+    }
+
+    companion object {
+        private const val SIM_1_SUBSCRIPTION_ID = 100
+        private const val SIM_2_SUBSCRIPTION_ID = 200
+        private const val SIM_1_CARRIER_NAME = "docomo"
+        private const val SIM_2_CARRIER_NAME = "au"
     }
 }

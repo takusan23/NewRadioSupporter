@@ -67,6 +67,42 @@ object NetworkStatusFlow {
         }
 
     /**
+     * 定額制、従量制をコールバックで受け取れるらしいんだけど動いてなくね？
+     *
+     * @return 無制限プラン、もしくは家のWi-Fi等定額制ネットワークの場合はtrueを返す
+     */
+    fun collectUnlimitedNetwork(context: Context) = callbackFlow {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
+                super.onCapabilitiesChanged(network, networkCapabilities)
+                // 無制限プランを契約している場合はtrue
+                val isUnlimited = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) ||
+                        networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_TEMPORARILY_NOT_METERED)
+                trySend(isUnlimited)
+            }
+        }
+        connectivityManager.registerDefaultNetworkCallback(callback)
+        awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
+    }
+
+    /**
+     * データ通信に設定されたSIMカードのスロット番号を取得する。
+     *
+     * @return データ通信に利用しているSIM。選択されていない場合は null を返す
+     */
+    @SuppressLint("MissingPermission")
+    fun getDataUsageSimSlotIndex(context: Context): Int? {
+        val dataUsageSubscriptionId = SubscriptionManager.getActiveDataSubscriptionId()
+        // 選択されていない場合
+        if (dataUsageSubscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
+            return null
+        }
+        val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
+        return subscriptionManager.getActiveSubscriptionInfo(dataUsageSubscriptionId)?.simSlotIndex
+    }
+
+    /**
      * [NetworkStatusData]を取得する。
      * 取得タイミングは [TelephonyManager]のコールバック + 一定間隔で同期APIを叩く です。
      * コールバックAPIのみでも良いはずですが、なんか調子悪いので追加で同期APIも一定間隔で叩くようにしてみました。
@@ -230,42 +266,6 @@ object NetworkStatusFlow {
                 // do nothing
             }
         }
-    }
-
-    /**
-     * 定額制、従量制をコールバックで受け取れるらしいんだけど動いてなくね？
-     *
-     * @return 無制限プラン、もしくは家のWi-Fi等定額制ネットワークの場合はtrueを返す
-     */
-    fun collectUnlimitedNetwork(context: Context) = callbackFlow {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-                super.onCapabilitiesChanged(network, networkCapabilities)
-                // 無制限プランを契約している場合はtrue
-                val isUnlimited = networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED) ||
-                        networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_TEMPORARILY_NOT_METERED)
-                trySend(isUnlimited)
-            }
-        }
-        connectivityManager.registerDefaultNetworkCallback(callback)
-        awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
-    }
-
-    /**
-     * データ通信に設定されたSIMカードのスロット番号を取得する。
-     *
-     * @return データ通信に利用しているSIM。選択されていない場合は null を返す
-     */
-    @SuppressLint("MissingPermission")
-    fun getDataUsageSimSlotIndex(context: Context): Int? {
-        val dataUsageSubscriptionId = SubscriptionManager.getActiveDataSubscriptionId()
-        // 選択されていない場合
-        if (dataUsageSubscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
-            return null
-        }
-        val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
-        return subscriptionManager.getActiveSubscriptionInfo(dataUsageSubscriptionId)?.simSlotIndex
     }
 
     /** [TelephonyManager.requestCellInfoUpdate]を叩く。更新しないと古いのが残ってしまうらしい。非同期なので終わるまで一時停止します */
