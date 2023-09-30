@@ -3,6 +3,13 @@
 アンテナピクト📶の隣に居座る5Gアイコンが何を示しているのか、その真実に迫るアプリです。  
 
 <p align="center">
+<img width="200" src="https://imgur.com/CzCjQSn.jpg">
+<img width="200" src="https://imgur.com/0mVypsW.jpg">
+<img width="200" src="https://imgur.com/porNfMv.jpg">
+<img width="200" src="https://imgur.com/HxdIGzT.jpg">
+</p>
+
+<p align="center">
 <img width="200" src="https://imgur.com/Gy099KS.png">
 <img width="200" src="https://imgur.com/QSx4MAQ.png">
 <img width="200" src="https://imgur.com/S9x7ck0.png">
@@ -17,6 +24,7 @@ https://play.google.com/store/apps/details?id=io.github.takusan23.newradiosuppor
 - 5Gの場合は スタンドアローン方式 / ノンスタンドアローン方式 の表示
 - デュアルSIM 対応
   - 多分 5G はデータ通信に設定したSIMカードしか拾わない気がします
+- ウィジェットを追加してホーム画面から確認
 - バックグラウンドでも通知領域から確認
 - おまけ程度のバンド表示
     - `n258`とか
