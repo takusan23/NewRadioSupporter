@@ -14,6 +14,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
+import androidx.compose.ui.res.stringResource
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -136,12 +137,13 @@ class BackgroundNrSupporter : Service() {
         }
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).apply {
             val networkType = when (finalNRType) {
-                FinalNrType.ANCHOR_BAND -> getString(R.string.type_lte_anchor_band)
-                FinalNrType.NR_LTE_FREQUENCY -> getString(R.string.type_lte_freq_nr)
-                FinalNrType.NR_SUB6 -> getString(R.string.type_nr_sub6)
                 FinalNrType.NR_MMW -> getString(R.string.type_nr_mmwave)
+                FinalNrType.NR_SUB6 -> getString(R.string.type_nr_sub6)
+                FinalNrType.NR_LTE_FREQUENCY -> getString(R.string.type_lte_freq_nr)
+                FinalNrType.MAYBE_NR -> getString(R.string.type_maybe_nr)
+                FinalNrType.ANCHOR_BAND -> getString(R.string.type_lte_anchor_band)
                 FinalNrType.LTE -> getString(R.string.type_lte)
-                else -> getString(R.string.loading)
+                FinalNrType.ERROR, null -> getString(R.string.loading)
             }
             val bandText = if (bandData != null) {
                 "${getString(R.string.connecting_band)}：${bandData.band} (${bandData.earfcn})"
@@ -150,12 +152,13 @@ class BackgroundNrSupporter : Service() {
             setContentText("$networkType\n$bandText")
             setSmallIcon(
                 when (finalNRType) {
-                    FinalNrType.ANCHOR_BAND -> R.drawable.ic_android_anchor_lte_band
-                    FinalNrType.NR_LTE_FREQUENCY -> R.drawable.android_nr_lte_freq_nr
-                    FinalNrType.NR_SUB6 -> R.drawable.ic_android_nr_sub6
                     FinalNrType.NR_MMW -> R.drawable.ic_android_nr_mmw
+                    FinalNrType.NR_SUB6 -> R.drawable.ic_android_nr_sub6
+                    FinalNrType.NR_LTE_FREQUENCY -> R.drawable.android_nr_lte_freq_nr
+                    FinalNrType.MAYBE_NR -> R.drawable.ic_outline_error_outline_24
+                    FinalNrType.ANCHOR_BAND -> R.drawable.ic_android_anchor_lte_band
                     FinalNrType.LTE -> R.drawable.ic_android_lte
-                    else -> R.drawable.ic_outline_error_outline_24
+                    FinalNrType.ERROR, null -> R.drawable.ic_outline_error_outline_24
                 }
             )
             // グループ
