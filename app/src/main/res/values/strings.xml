@@ -46,4 +46,5 @@
     <string name="background_nr_permission_location_description">You will be redirected to the location information settings screen, so select "%s".\n\nThese are only used to notify you of 5G status in the background.\nThis permission is not required if you do not use the notification function.</string>
     <string name="background_nr_permission_dialog_confirm">Grant permission</string>
     <string name="background_nr_permission_dialog_dismiss">Back</string>
+    <string name="open_privacy_policy">Open privacy policy</string>
 </resources>

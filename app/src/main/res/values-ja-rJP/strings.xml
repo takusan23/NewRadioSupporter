@@ -47,4 +47,5 @@
     <string name="background_nr_permission_location_description">位置情報の設定画面に遷移するので、「%s」を選んでください。\n\nこれらは、バックグラウンドで 5G の状態を通知するためにのみ使われます。\nバックグラウンド 5G 通知機能を利用しない場合はこの権限は不要です。</string>
     <string name="background_nr_permission_dialog_confirm">権限を付与する</string>
     <string name="background_nr_permission_dialog_dismiss">戻る</string>
+    <string name="open_privacy_policy">プライバシーポリシーを開く</string>
 </resources>
