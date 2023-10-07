@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -19,6 +20,8 @@ import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
 import io.github.takusan23.newradiosupporter.tool.PermissionCheckTool
 import io.github.takusan23.newradiosupporter.tool.SettingIntentTool
+import io.github.takusan23.newradiosupporter.tool.ShizukuTool
+import io.github.takusan23.newradiosupporter.tool.data.PhysicalChannelConfigData
 import io.github.takusan23.newradiosupporter.ui.component.*
 
 /** 回線状態を表示している Card の tonalElevation */
@@ -38,6 +41,7 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
     // Flowで収集する
     val isUnlimitedNetwork = NetworkStatusFlow.collectUnlimitedNetwork(context).collectAsStateWithLifecycle(initialValue = null)
     val multipleNetworkStatusDataList = NetworkStatusFlow.collectMultipleNetworkStatus(context).collectAsStateWithLifecycle(initialValue = emptyList())
+    val multiplePhysicalChannelConfigDataList = ShizukuTool.collectMultiplePhysicalChannelConfigDataList(context).collectAsStateWithLifecycle(initialValue = emptyList())
 
     // バックグラウンドの権限ダイアログを出すか
     val isOpenBackgroundPermissionDialog = remember { mutableStateOf(false) }
@@ -96,41 +100,32 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                     }
 
                 }
+
                 item {
-                    Divider(
-                        modifier = Modifier.fillMaxWidth(0.5f)
-                    )
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        Divider(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .fillMaxWidth(0.5f)
+                        )
+                    }
                 }
 
-                /*
-                                // 物理チャンネル構成
-                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                    itemsIndexed(multipleSimSubscriptionIdList.value) { _, subscriptionId ->
-                                        val pairCellList = remember {
-                                            ShizukuTool
-                                                .collectPhysicalChannelConfigDataList(context, subscriptionId)
-                                                .map { list ->
-                                                    val primaryCell = list.filter { data -> data.cellType == PhysicalChannelConfigData.CellType.PRIMARY }
-                                                    val secondaryCell = list.filter { data -> data.cellType == PhysicalChannelConfigData.CellType.SECONDARY }
-                                                    primaryCell to secondaryCell
-                                                }
-                                        }.collectAsStateWithLifecycle(initialValue = null)
+                // 物理チャンネル構成
+                items(multiplePhysicalChannelConfigDataList.value) { physicalChannelConfigDataList ->
+                    val primaryCell = physicalChannelConfigDataList.filter { data -> data.cellType == PhysicalChannelConfigData.CellType.PRIMARY }
+                    val secondaryCell = physicalChannelConfigDataList.filter { data -> data.cellType == PhysicalChannelConfigData.CellType.SECONDARY }
 
-                                        // データが取れた場合
-                                        pairCellList.value?.also { (primaryCell, secondaryCell) ->
-                                            SuperUserInfoCard(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(start = 20.dp, end = 20.dp),
-                                                simIndex = primaryCell.firstOrNull()?.simSlotIndex ?: 1,
-                                                carrierName = primaryCell.firstOrNull()?.bandData?.carrierName ?: "",
-                                                primaryCell = primaryCell,
-                                                secondaryCellList = secondaryCell
-                                            )
-                                        }
-                                    }
-                                }
-                */
+                    SuperUserInfoCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 20.dp, end = 20.dp),
+                        simIndex = primaryCell.firstOrNull()?.simSlotIndex ?: 1,
+                        carrierName = primaryCell.firstOrNull()?.bandData?.carrierName ?: "",
+                        primaryCell = primaryCell,
+                        secondaryCellList = secondaryCell
+                    )
+                }
 
                 item {
                     if (isUnlimitedNetwork.value != null) {

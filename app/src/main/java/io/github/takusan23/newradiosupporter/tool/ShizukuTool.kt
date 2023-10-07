@@ -12,6 +12,7 @@ import com.android.internal.telephony.ITelephony
 import com.android.internal.telephony.ITelephonyRegistry
 import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.PhysicalChannelConfigData
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -44,12 +45,44 @@ object ShizukuTool {
         get() = Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
 
     /**
+     * [NetworkStatusFlow.collectMultipleSimSubscriptionIdList]と[collectPhysicalChannelConfigDataList]の合体版
+     *
+     * @param context [Context]
+     * @return SIM カードの枚数分、[PhysicalChannelConfigData]を返す
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun collectMultiplePhysicalChannelConfigDataList(context: Context) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        NetworkStatusFlow.collectMultipleSimSubscriptionIdList(context)
+            .transformLatest { subscriptionIdList ->
+                // 配列を返したい
+                // 配列に配列入れてる、限界、、
+                val configDataListArray = Array<List<PhysicalChannelConfigData>>(subscriptionIdList.size) { emptyList() }
+
+                // SIM カードの枚数分 PhysicalChannelConfig を取得する
+                subscriptionIdList
+                    .mapIndexed { index, subscriptionId ->
+                        collectPhysicalChannelConfigDataList(
+                            context = context,
+                            subscriptionId = subscriptionId
+                        ).onEach {
+                            configDataListArray[index] = it
+                            // 値が来たら transformLatest に渡すことで、この Flow の返り値となる
+                            emit(configDataListArray.toList())
+                        }
+                    }
+                    // 複数の Flow を1つにして、購読する
+                    .merge()
+                    .collect()
+            }
+    } else emptyFlow()
+
+    /**
      * [PhysicalChannelConfig]と[CellInfo]からセル情報を取得する
      *
      * @return [PhysicalChannelConfigData]
      */
     @RequiresApi(Build.VERSION_CODES.S)
-    fun collectPhysicalChannelConfigDataList(
+    private fun collectPhysicalChannelConfigDataList(
         context: Context,
         subscriptionId: Int = defaultSubscriptionId
     ) = channelFlow {
@@ -97,8 +130,8 @@ object ShizukuTool {
                 it.networkType == TelephonyManager.NETWORK_TYPE_LTE_CA || it.networkType == TelephonyManager.NETWORK_TYPE_LTE
             }.mapIndexed { index, physicalChannelConfig ->
                 val cellType = when (physicalChannelConfig.connectionStatus) {
-                    PhysicalChannelConfig.CONNECTION_PRIMARY_SERVING -> PhysicalChannelConfigData.CellType.PRIMARY
-                    PhysicalChannelConfig.CONNECTION_SECONDARY_SERVING -> PhysicalChannelConfigData.CellType.SECONDARY
+                    CellInfo.CONNECTION_PRIMARY_SERVING -> PhysicalChannelConfigData.CellType.PRIMARY
+                    CellInfo.CONNECTION_SECONDARY_SERVING -> PhysicalChannelConfigData.CellType.SECONDARY
                     else -> PhysicalChannelConfigData.CellType.ERROR
                 }
                 val networkType = when (physicalChannelConfig.networkType) {
@@ -235,10 +268,10 @@ object ShizukuTool {
         val listenWithEventListMethod = this::class.java
             .methods
             .first { it.name == "listenWithEventList" }
-        when (Build.VERSION.SDK_INT) {
-            // Android 13
+        when {
+            // Android 13 以上
             // https://cs.android.com/android/platform/superproject/+/android-13.0.0_r1:frameworks/base/services/core/java/com/android/server/TelephonyRegistry.java;l=1030
-            Build.VERSION_CODES.TIRAMISU -> {
+            Build.VERSION_CODES.TIRAMISU <= Build.VERSION.SDK_INT -> {
                 listenWithEventListMethod.invoke(
                     this,
                     renounceFineLocationAccess,
@@ -251,9 +284,9 @@ object ShizukuTool {
                     notifyNow
                 )
             }
-            // Android 12
+            // Android 12 以下
             // https://cs.android.com/android/platform/superproject/+/android-12.0.0_r1:frameworks/base/services/core/java/com/android/server/TelephonyRegistry.java;l=993
-            Build.VERSION_CODES.S -> {
+            Build.VERSION_CODES.S >= Build.VERSION.SDK_INT -> {
                 listenWithEventListMethod.invoke(
                     this,
                     subId,
