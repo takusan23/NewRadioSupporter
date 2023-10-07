@@ -248,10 +248,12 @@ object NetworkStatusFlow {
      * SIMカードの枚数分だけ subscriptionId を Flow で返す
      * もしSIMカードが1枚も刺さっていない場合はデフォルトの subscriptionId を返します
      *
+     * [ShizukuTool]で使うため、private ではなく public
+     *
      * @see [SubscriptionManager.DEFAULT_SUBSCRIPTION_ID]
      */
     @SuppressLint("MissingPermission")
-    private fun collectMultipleSimSubscriptionIdList(context: Context) = callbackFlow {
+    fun collectMultipleSimSubscriptionIdList(context: Context) = callbackFlow {
         val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
         if (PermissionCheckTool.isGrantedPermission(context)) {
             // 多分 SubscriptionInfo が更新されたら呼び出される

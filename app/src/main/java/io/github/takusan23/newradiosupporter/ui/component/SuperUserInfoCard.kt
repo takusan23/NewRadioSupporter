@@ -20,7 +20,6 @@ private val ParentCardTonalElevation = 5.dp
 /**
  * [android.telephony.PhysicalChannelConfig]を Shizuku-API を利用することで取得できるので、表示するためのUI
  */
-@RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SuperUserInfoCard(
@@ -91,7 +90,6 @@ private fun SuperUserOverview(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 private fun SuperUserCellInfoCard(
     modifier: Modifier = Modifier,
@@ -111,7 +109,6 @@ private fun SuperUserCellInfoCard(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.S)
 @Composable
 private fun SuperUserCellInfoItem(
     modifier: Modifier = Modifier,
