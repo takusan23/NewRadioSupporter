@@ -2,11 +2,7 @@ package io.github.takusan23.newradiosupporter.tool
 
 import io.github.takusan23.newradiosupporter.tool.data.BandDictionaryData
 
-/**
- * EARFCN(LTE)と、NRARFCN(5G/NR)からバンドを出す
- *
- * LTE band EARFCN table 等で検索検索
- */
+/** EARFCN(4G/LTE)と、NRARFCN(5G/NR)からバンドを出す */
 object BandDictionary {
 
     /** 最小の Sub-6 5G 新周波数帯 ( MHz )。転用5Gは含まれない */
@@ -16,8 +12,9 @@ object BandDictionary {
      * バンドとEARFCN（最小値と最大値）の相対表。LTE（4G）版
      *
      * 3GPP TS 36.104 参照
+     * https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=2412
      */
-    private val bandLTEList = listOf(
+    private val bandLteList = listOf(
         BandDictionaryData.Lte("1", 0, 599, 2110f),
         BandDictionaryData.Lte("2", 600, 1199, 1930f),
         BandDictionaryData.Lte("3", 1200, 1949, 1805f),
@@ -89,26 +86,52 @@ object BandDictionary {
     )
 
     /**
-     * バンドとARFCNの相対表。NR（5G）版
+     * バンドと NR-ARFCN の相対表。NR（5G）版
      *
+     * FR1（Sub-6 まで）
      * 3GPP TS 38.101-1 参照
+     * https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=3283
+     *
+     * FR2（ミリ波）
+     * 3GPP TS 38.101-2 参照
+     * https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=3284
      */
-    private val bandNRList = listOf(
+    // TODO AOSP の実装 https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/telephony/java/android/telephony/AccessNetworkUtils.java
+    private val bandNrList = listOf(
         BandDictionaryData.Nr("n1", 422000, 434000, false),
         BandDictionaryData.Nr("n2", 386000, 398000, false),
         BandDictionaryData.Nr("n3", 361000, 376000, false),
         BandDictionaryData.Nr("n5", 173800, 178800, false),
         BandDictionaryData.Nr("n7", 524000, 538000, false),
         BandDictionaryData.Nr("n8", 185000, 192000, false),
+        BandDictionaryData.Nr("n12", 145800, 149200, false),
+        BandDictionaryData.Nr("n13", 149200, 151200, false),
+        BandDictionaryData.Nr("n14", 151600, 153600, false),
+        BandDictionaryData.Nr("n18", 172000, 175000, false),
         // n20 よりも先に n28 の確認をします
         // 700MHz 転用5G は n28
         BandDictionaryData.Nr("n28", 151600, 160600, false),
         BandDictionaryData.Nr("n20", 158200, 164200, false),
+        BandDictionaryData.Nr("n24", 305000, 311800, false),
+        BandDictionaryData.Nr("n25", 386000, 399000, false),
+        BandDictionaryData.Nr("n26", 171800, 178800, false),
+        BandDictionaryData.Nr("n29", 143400, 145600, false),
+        BandDictionaryData.Nr("n30", 470000, 472000, false),
+        BandDictionaryData.Nr("n34", 402000, 405000, false),
         BandDictionaryData.Nr("n38", 514000, 524000, false),
+        BandDictionaryData.Nr("n39", 376000, 384000, false),
+        BandDictionaryData.Nr("n40", 460000, 480000, false),
         BandDictionaryData.Nr("n41", 499200, 537999, false),
+        BandDictionaryData.Nr("n46", 743334, 795000, false),
+        BandDictionaryData.Nr("n47", 790334, 795000, false),
+        BandDictionaryData.Nr("n48", 636667, 646666, false),
         BandDictionaryData.Nr("n50", 286400, 303400, false),
         BandDictionaryData.Nr("n51", 285400, 286400, false),
+        BandDictionaryData.Nr("n53", 496700, 499000, false),
+        BandDictionaryData.Nr("n54", 334000, 335000, false),
+        BandDictionaryData.Nr("n65", 422000, 440000, false),
         BandDictionaryData.Nr("n66", 422000, 440000, false),
+        BandDictionaryData.Nr("n67", 147600, 151600, false),
         BandDictionaryData.Nr("n70", 399000, 404000, false),
         BandDictionaryData.Nr("n71", 123400, 130400, false),
         BandDictionaryData.Nr("n74", 295000, 303600, false),
@@ -119,10 +142,26 @@ object BandDictionary {
         BandDictionaryData.Nr("n78", 620000, 653333, false),
         BandDictionaryData.Nr("n77", 620000, 680000, false),
         BandDictionaryData.Nr("n79", 693334, 733333, false),
+        BandDictionaryData.Nr("n85", 145600, 149200, false),
+        BandDictionaryData.Nr("n90", 499200, 538000, false),
+        BandDictionaryData.Nr("n91", 285400, 286400, false),
+        BandDictionaryData.Nr("n92", 286400, 303400, false),
+        BandDictionaryData.Nr("n93", 285400, 286400, false),
+        BandDictionaryData.Nr("n94", 286400, 303400, false),
+        BandDictionaryData.Nr("n96", 795000, 875000, false),
+        BandDictionaryData.Nr("n100", 183880, 185000, false),
+        BandDictionaryData.Nr("n101", 380000, 382000, false),
+        BandDictionaryData.Nr("n102", 795000, 828333, false),
+        BandDictionaryData.Nr("n104", 828334, 875000, false),
+        BandDictionaryData.Nr("n105", 122400, 130400, false),
         // 5G ミリ波
-        BandDictionaryData.Nr("n257", 2054167, 2104166, true),
-        BandDictionaryData.Nr("n258", 2016667, 2070833, true),
-        BandDictionaryData.Nr("n260", 2229167, 2279166, true),
+        BandDictionaryData.Nr("n257", 2054166, 2104165, true),
+        BandDictionaryData.Nr("n258", 2016667, 2070832, true),
+        BandDictionaryData.Nr("n259", 2270833, 2337499, true),
+        BandDictionaryData.Nr("n260", 2229166, 2279165, true),
+        BandDictionaryData.Nr("n261", 2070833, 2084999, true),
+        BandDictionaryData.Nr("n262", 2399166, 2415832, true),
+        // n263 もあるがなんか難しそうなのと、多分どこも使ってないので
     )
 
     /**
@@ -131,7 +170,7 @@ object BandDictionary {
      * @return 1850 なら band 3
      */
     fun toLteBand(earfcn: Int): String {
-        return bandLTEList.firstOrNull { bandDictionaryData ->
+        return bandLteList.firstOrNull { bandDictionaryData ->
             // 範囲内にあれば
             earfcn in (bandDictionaryData.dlMin..bandDictionaryData.dlMax)
         }?.bandNumber.toString()
@@ -140,10 +179,10 @@ object BandDictionary {
     /**
      * NRARFCNからバンドを出す。5G版。NRは「New Radio」らしい
      *
-     * @return n3 とか返ってくると思う
+     * @return n79 とか返ってくると思う
      */
     fun toNrBand(nrarfcn: Int): String {
-        return bandNRList.firstOrNull { bandDictionaryData ->
+        return bandNrList.firstOrNull { bandDictionaryData ->
             // 範囲内にあれば
             nrarfcn in (bandDictionaryData.dlMin..bandDictionaryData.dlMax)
         }?.bandNumber.toString()
@@ -154,7 +193,7 @@ object BandDictionary {
      * 複数のバンドが対象の場合はそれに従う
      */
     fun toNRBandList(nrarfcn: Int): List<String> {
-        return bandNRList.filter { bandDictionaryData ->
+        return bandNrList.filter { bandDictionaryData ->
             // 範囲内にあれば
             nrarfcn in (bandDictionaryData.dlMin..bandDictionaryData.dlMax)
         }.map { it.bandNumber }
@@ -165,7 +204,7 @@ object BandDictionary {
      *
      * @return ミリ波ならtrue
      * */
-    fun isMmWave(nrarfcn: Int): Boolean = nrarfcn >= bandNRList.first { it.isMmWave }.dlMin
+    fun isMmWave(nrarfcn: Int): Boolean = nrarfcn >= bandNrList.first { it.isMmWave }.dlMin
 
     /**
      * EARFCN (4G)から周波数を求める。
@@ -176,7 +215,7 @@ object BandDictionary {
      */
     fun toLteFrequencyMhz(earfcn: Int): Float {
         // 無いと思うけど無いなら return
-        val bandData = bandLTEList.firstOrNull { bandDictionaryData -> earfcn in (bandDictionaryData.dlMin..bandDictionaryData.dlMax) } ?: return -1f
+        val bandData = bandLteList.firstOrNull { bandDictionaryData -> earfcn in (bandDictionaryData.dlMin..bandDictionaryData.dlMax) } ?: return -1f
         // NOffs-DL は EARFCN の範囲の最小値と同じなのでそれを使う
         val NOffsDL = bandData.dlMin
         // NR は周波数で値が違うが、LTE はバンドによって値が異なる

@@ -38,6 +38,8 @@ class BandDictionaryTest {
     fun toNRBand_NRARFCNをバンドに変換できる() {
         val bandN78 = BandDictionary.toNrBand(643334)
         Assert.assertEquals(bandN78, "n78")
+        val bandN78_2 = BandDictionary.toNrBand(643296)
+        Assert.assertEquals(bandN78_2, "n78")
         val bandN79 = BandDictionary.toNrBand(703392)
         Assert.assertEquals(bandN79, "n79")
         val bandList = BandDictionary.toNRBandList(159630)
