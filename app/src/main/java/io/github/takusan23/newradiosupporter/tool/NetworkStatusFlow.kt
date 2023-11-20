@@ -127,6 +127,11 @@ object NetworkStatusFlow {
         val simSlotIndex = subscriptionManager.getActiveSubscriptionInfo(subscriptionId)?.simSlotIndex ?: 0
         // キャリア名
         val carrierName = telephonyManager.networkOperatorName
+        // 通信キャリアの MCC / MNC を取得する
+        // MCC 3桁 + MNC 2桁 で構成されているはず
+        // SIM カードが未挿入の場合は空文字を返す
+        val (mcc, mnc) = telephonyManager.networkOperator
+            .let { plmn -> plmn.take(3) to plmn.takeLast(2) }
         // TelephonyDisplayInfoはコールバックのみの提供なので
         var tempTelephonyDisplayInfo: TelephonyDisplayInfo? = null
 
@@ -156,11 +161,8 @@ object NetworkStatusFlow {
             // Qualcomm Snapdragon の場合、配列のどっかに CellInfoNr があるみたい。
             // で、 Qualcomm Snapdragon の場合で CellInfoNr が取れない場合がある（ CellSignalStrengthNr だけ取れる。バンドとかは取れないけど5Gの電波強度が取れる？）
             // ない場合は 4G か アンカーバンド？
-            val bandData = cellInfoList.filterIsInstance<CellInfoNr>().firstOrNull()?.let {
-                convertBandData(it, carrierName)
-            } ?: cellInfoList.firstOrNull()?.let {
-                convertBandData(it, carrierName)
-            } ?: return@runCatching null // BandData 取れない場合は何もできないので return してしまう
+            val cellInfo = cellInfoList.filterIsInstance<CellInfoNr>().firstOrNull() ?: cellInfoList.firstOrNull()
+            val bandData = cellInfo?.let { convertBandData(mcc, mnc, it, carrierName) } ?: return@runCatching null // BandData 取れない場合は何もできないので return してしまう
 
             val nrType = when {
                 // 4Gの場合の処理
@@ -175,9 +177,9 @@ object NetworkStatusFlow {
                     else -> FinalNrType.LTE
                 }
                 // 転用5G
-                BandDictionary.isLteFrequency(bandData.earfcn) -> FinalNrType.NR_LTE_FREQUENCY
+                BandDictionaryTool.isLteFrequency(bandData.earfcn) -> FinalNrType.NR_LTE_FREQUENCY
                 // ミリ波
-                BandDictionary.isMmWave(bandData.earfcn) -> FinalNrType.NR_MMW
+                BandDictionaryTool.isMmWave(bandData.earfcn) -> FinalNrType.NR_MMW
                 // ミリ波以外 なら Sub6判定
                 else -> FinalNrType.NR_SUB6
             }
@@ -287,19 +289,26 @@ object NetworkStatusFlow {
     /**
      * [CellInfo]を簡略化した[BandData]に変換する
      *
+     * @param mcc 通信キャリアの MCC
+     * @param mnc 通信キャリアの MNC
      * @param cellInfo [TelephonyCallback.CellInfoListener]で取れるやつ
      * @param carrierName キャリア名。[TelephonyManager.getNetworkOperatorName]
      * @return [BandData]。LTE/NR 以外はnullになります
      * */
-    private fun convertBandData(cellInfo: CellInfo, carrierName: String) = when (val cellIdentity = cellInfo.cellIdentity) {
+    private fun convertBandData(
+        mcc: String,
+        mnc: String,
+        cellInfo: CellInfo,
+        carrierName: String
+    ) = when (val cellIdentity = cellInfo.cellIdentity) {
         // LTE
         is CellIdentityLte -> {
             val earfcn = cellIdentity.earfcn
             BandData(
                 isNR = false,
-                band = BandDictionary.toLteBand(earfcn),
+                band = BandDictionaryTool.toLteBand(earfcn),
                 earfcn = earfcn,
-                frequencyMHz = BandDictionary.toLteFrequencyMhz(earfcn),
+                frequencyMHz = BandDictionaryTool.toLteFrequencyMhz(earfcn),
                 carrierName = carrierName.ifEmpty { cellIdentity.operatorAlphaShort.toString() },
             )
         }
@@ -310,11 +319,21 @@ object NetworkStatusFlow {
             // NR の場合は同じような表を用意しても、複数の結果になる場合がある（n78はn77を内包のような）
             // なので、まずはシステムから帰ってきた値を優先的に利用し、取得できなかった場合のみ表から探すようにする
             // が、多分モデムのベンダーはこれを実装していないため、おそらく表から探すハメになる
+            val modemOrFallbackNrBand = cellIdentity.bands.firstOrNull()?.let { "n$it" } ?: BandDictionaryTool.toNrBand(nrarfcn)
+
+            // 日本だけですが、通信キャリアが使っていない 5G バンドが返ってきたら修正を試みます。
+            val fixNrBand = BandDictionaryTool.tryFixNrBandOrNull(
+                mcc = cellIdentity.mccString ?: mcc,
+                mnc = cellIdentity.mncString ?: mnc,
+                nrarfcn = nrarfcn,
+                bandNumber = modemOrFallbackNrBand
+            )
+
             BandData(
                 isNR = true,
-                band = cellIdentity.bands.firstOrNull()?.let { "n$it" } ?: BandDictionary.toNrBand(nrarfcn),
+                band = fixNrBand,
                 earfcn = nrarfcn,
-                frequencyMHz = BandDictionary.toNrFrequencyMhz(nrarfcn),
+                frequencyMHz = BandDictionaryTool.toNrFrequencyMhz(nrarfcn),
                 // キャリア名が空の場合は CellIdentity から取る
                 carrierName = carrierName.ifEmpty { cellIdentity.operatorAlphaShort.toString() },
             )

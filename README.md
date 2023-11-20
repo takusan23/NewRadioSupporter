@@ -31,6 +31,13 @@ https://play.google.com/store/apps/details?id=io.github.takusan23.newradiosuppor
 
 (なんか従量制ネットワークか無制限ネットワークか検出出来るよ！って書いてあったんだけど検出できてない。流石にできないやろ...)
 
+# バンド表示
+`MCC / MNC`が日本のキャリアの場合は追加の処理を行います。  
+これは`NR-ARFCN`が複数のバンドを返す場合に、通信キャリアが提供しているバンドを優先して返すようにするためです。
+
+// TODO 画像を貼る
+// TODO まだ未リリース
+
 # 開発者向け
 JetpackComposeでできてます。最新のAndroid Studioで実行できるはずです。
 

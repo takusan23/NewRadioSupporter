@@ -2,8 +2,8 @@ package io.github.takusan23.newradiosupporter.tool
 
 import io.github.takusan23.newradiosupporter.tool.data.BandDictionaryData
 
-/** EARFCN(4G/LTE)と、NRARFCN(5G/NR)からバンドを出す */
-object BandDictionary {
+/** EARFCN(4G/LTE)と、NR-ARFCN(5G/NR)からバンドを出す */
+object BandDictionaryTool {
 
     /** 最小の Sub-6 5G 新周波数帯 ( MHz )。転用5Gは含まれない */
     private const val SUB6_MIN_FREQUENCY_WITHOUT_LTE_FREQUENCY_MHZ = 3600
@@ -95,8 +95,10 @@ object BandDictionary {
      * FR2（ミリ波）
      * 3GPP TS 38.101-2 参照
      * https://portal.3gpp.org/desktopmodules/Specifications/SpecificationDetails.aspx?specificationId=3284
+     *
+     * AOSP の実装
+     * https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/telephony/java/android/telephony/AccessNetworkUtils.java
      */
-    // TODO AOSP の実装 https://cs.android.com/android/platform/superproject/main/+/main:frameworks/base/telephony/java/android/telephony/AccessNetworkUtils.java
     private val bandNrList = listOf(
         BandDictionaryData.Nr("n1", 422000, 434000, false),
         BandDictionaryData.Nr("n2", 386000, 398000, false),
@@ -108,13 +110,11 @@ object BandDictionary {
         BandDictionaryData.Nr("n13", 149200, 151200, false),
         BandDictionaryData.Nr("n14", 151600, 153600, false),
         BandDictionaryData.Nr("n18", 172000, 175000, false),
-        // n20 よりも先に n28 の確認をします
-        // 700MHz 転用5G は n28
-        BandDictionaryData.Nr("n28", 151600, 160600, false),
         BandDictionaryData.Nr("n20", 158200, 164200, false),
         BandDictionaryData.Nr("n24", 305000, 311800, false),
         BandDictionaryData.Nr("n25", 386000, 399000, false),
         BandDictionaryData.Nr("n26", 171800, 178800, false),
+        BandDictionaryData.Nr("n28", 151600, 160600, false),
         BandDictionaryData.Nr("n29", 143400, 145600, false),
         BandDictionaryData.Nr("n30", 470000, 472000, false),
         BandDictionaryData.Nr("n34", 402000, 405000, false),
@@ -177,8 +177,9 @@ object BandDictionary {
     }
 
     /**
-     * NRARFCNからバンドを出す。5G版。NRは「New Radio」らしい
+     * NR-ARFCN からバンドを出す。5G版。NRは「New Radio」らしい
      *
+     * TODO 複数のバンドを返す NR-ARFCN の場合は [tryFixNrBandOrNull] を使う
      * @return n79 とか返ってくると思う
      */
     fun toNrBand(nrarfcn: Int): String {
@@ -189,10 +190,10 @@ object BandDictionary {
     }
 
     /**
-     * NRARFCNからバンドを出す。5G版。NRは「New Radio」らしい
+     * NR-ARFCN からバンドを出す。5G版。NRは「New Radio」らしい
      * 複数のバンドが対象の場合はそれに従う
      */
-    fun toNRBandList(nrarfcn: Int): List<String> {
+    fun toNrBandList(nrarfcn: Int): List<String> {
         return bandNrList.filter { bandDictionaryData ->
             // 範囲内にあれば
             nrarfcn in (bandDictionaryData.dlMin..bandDictionaryData.dlMax)
@@ -204,7 +205,12 @@ object BandDictionary {
      *
      * @return ミリ波ならtrue
      * */
-    fun isMmWave(nrarfcn: Int): Boolean = nrarfcn >= bandNrList.first { it.isMmWave }.dlMin
+    fun isMmWave(nrarfcn: Int): Boolean {
+        return bandNrList.firstOrNull { bandDictionaryData ->
+            // 範囲内にあれば
+            nrarfcn in (bandDictionaryData.dlMin..bandDictionaryData.dlMax)
+        }?.isMmWave == true
+    }
 
     /**
      * EARFCN (4G)から周波数を求める。
@@ -227,14 +233,14 @@ object BandDictionary {
     }
 
     /**
-     * NRARFCN (5G) から周波数を求める。
+     * NR-ARFCN (5G) から周波数を求める。
      * 計算式は「3GPP TS 38.104 5.4.2.1」を参照してください。
      *
-     * @param nrarfcn NRARFCN
+     * @param nrarfcn NR-ARFCN
      * @return 周波数 (ダウンリンク)。単位は MHz 。3600とか。
      */
     fun toNrFrequencyMhz(nrarfcn: Int): Float {
-        // 計算に必要な、 FREF-Offs / FGlobal / NREF-Offs を NRARFCN から出す
+        // 計算に必要な、 FREF-Offs / FGlobal / NREF-Offs を NR-ARFCN から出す
         // 資料では FGlobal は kHz だが、 MHz に合わせるため変換している
         val (FGlobal, FREFOffs, NREFOffs) = when (nrarfcn) {
             // 3 GHz 以下
@@ -246,7 +252,7 @@ object BandDictionary {
             // ありえないので適当にreturn
             else -> return -1f
         }
-        // FREFOffs + FGlobal( NRARFCN - NREFOffs ) の計算をする
+        // FREFOffs + FGlobal( NR-ARFCN - NREFOffs ) の計算をする
         val frequencyMHz = FREFOffs + ((FGlobal * nrarfcn) - (FGlobal * NREFOffs))
         // 小数点第二位までにする
         return "%.2f".format(frequencyMHz).toFloat()
@@ -260,4 +266,38 @@ object BandDictionary {
      */
     fun isLteFrequency(nrarfcn: Int): Boolean = toNrFrequencyMhz(nrarfcn) < SUB6_MIN_FREQUENCY_WITHOUT_LTE_FREQUENCY_MHZ
 
+
+    /**
+     * 5G バンドの修正を試みる
+     * 詳しくは→ [CarrierNrBandDictionary]
+     *
+     * @param mcc MCC
+     * @param mnc MNC
+     * @param nrarfcn NR-ARFCN
+     * @param bandNumber 修正前のバンド、[android.telephony.CellIdentityNr.getBands]や[toNrBand]の返り値
+     * @return 修正できた場合はバンド、出来なかった場合は[bandNumber]をそのまま返す
+     */
+    fun tryFixNrBandOrNull(mcc: String, mnc: String, nrarfcn: Int, bandNumber: String): String {
+        // あらかじめ用意した、通信キャリアの提供している 5G バンドを取得する
+        // 用意していないキャリアの場合はそのまま返す
+        val provideNrBandNumberList = CarrierNrBandDictionary
+            .findProvideNrBandNumberList(mcc, mnc) ?: return bandNumber
+
+        // 修正を試みる
+        // 提供している 5G バンドに含まれている場合はそのまま返す
+        if (provideNrBandNumberList.any { it == bandNumber }) {
+            return bandNumber
+        }
+
+        // 提供しているバンドと引数のバンドが違った場合
+        // NR-ARFCN を使い再度バンドを探し、提供している 5G バンドを返す
+        val findBandFromProvideCarrierNrBand = toNrBandList(nrarfcn)
+            .firstOrNull { resolveBandName -> provideNrBandNumberList.any { it == resolveBandName } }
+        if (findBandFromProvideCarrierNrBand != null) {
+            return findBandFromProvideCarrierNrBand
+        }
+
+        // それでもうまく行かなかった場合は、修正できないため元のバンドを返す
+        return bandNumber
+    }
 }
