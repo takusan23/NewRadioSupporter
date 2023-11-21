@@ -38,6 +38,7 @@ class NetworkStatusFlowTest {
         val telephonyManager = mockk<TelephonyManager>().apply {
             every { networkOperatorName }.returns("docomo")
             every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
+            every { networkOperator }.returns("44010")
             every { createForSubscriptionId(any()) }.returns(this)
             every { unregisterTelephonyCallback(any()) }.returns(Unit)
             every { signalStrength }.returns(mockk<SignalStrength>().apply {
@@ -55,6 +56,9 @@ class NetworkStatusFlowTest {
                             every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
                                 every { nrarfcn }.returns(643334)
                                 every { operatorAlphaShort }.returns("docomo")
+                                // null なら networkOperator から取る
+                                every { mccString }.returns(null)
+                                every { mncString }.returns(null)
                                 every { bands }.returns(intArrayOf())
                             })
                         },
@@ -91,6 +95,7 @@ class NetworkStatusFlowTest {
         val telephonyManager = mockk<TelephonyManager>().apply {
             every { networkOperatorName }.returns("docomo")
             every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
+            every { networkOperator }.returns("44010")
             every { createForSubscriptionId(any()) }.returns(this)
             every { unregisterTelephonyCallback(any()) }.returns(Unit)
             every { signalStrength }.returns(mockk<SignalStrength>().apply {
@@ -108,6 +113,9 @@ class NetworkStatusFlowTest {
                             every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
                                 every { nrarfcn }.returns(2070015)
                                 every { operatorAlphaShort }.returns("docomo")
+                                // null なら networkOperator から取る
+                                every { mccString }.returns(null)
+                                every { mncString }.returns(null)
                                 every { bands }.returns(intArrayOf())
                             })
                         },
@@ -144,6 +152,7 @@ class NetworkStatusFlowTest {
         val telephonyManager = mockk<TelephonyManager>().apply {
             every { networkOperatorName }.returns("docomo")
             every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
+            every { networkOperator }.returns("44010")
             every { createForSubscriptionId(any()) }.returns(this)
             every { unregisterTelephonyCallback(any()) }.returns(Unit)
             every { signalStrength }.returns(mockk<SignalStrength>().apply {
@@ -161,6 +170,9 @@ class NetworkStatusFlowTest {
                             every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
                                 every { nrarfcn }.returns(157690)
                                 every { operatorAlphaShort }.returns("docomo")
+                                // null なら networkOperator から取る
+                                every { mccString }.returns(null)
+                                every { mncString }.returns(null)
                                 every { bands }.returns(intArrayOf())
                             })
                         },
@@ -197,6 +209,7 @@ class NetworkStatusFlowTest {
         val telephonyManager = mockk<TelephonyManager>().apply {
             every { networkOperatorName }.returns("docomo")
             every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
+            every { networkOperator }.returns("44010")
             every { createForSubscriptionId(any()) }.returns(this)
             every { unregisterTelephonyCallback(any()) }.returns(Unit)
             // getSignalStrength もモック
@@ -252,6 +265,7 @@ class NetworkStatusFlowTest {
         val telephonyManager = mockk<TelephonyManager>().apply {
             every { networkOperatorName }.returns("docomo")
             every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
+            every { networkOperator }.returns("44010")
             every { createForSubscriptionId(any()) }.returns(this)
             every { unregisterTelephonyCallback(any()) }.returns(Unit)
             // 5Gの電波強度をモックする
@@ -303,6 +317,7 @@ class NetworkStatusFlowTest {
         val telephonyManager = mockk<TelephonyManager>().apply {
             every { networkOperatorName }.returns("docomo")
             every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
+            every { networkOperator }.returns("44010")
             every { createForSubscriptionId(any()) }.returns(this)
             every { unregisterTelephonyCallback(any()) }.returns(Unit)
             every { signalStrength }.returns(mockk<SignalStrength>().apply {
@@ -322,6 +337,9 @@ class NetworkStatusFlowTest {
                             every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
                                 every { nrarfcn }.returns(643334)
                                 every { operatorAlphaShort }.returns("docomo")
+                                // null なら networkOperator から取る
+                                every { mccString }.returns(null)
+                                every { mncString }.returns(null)
                                 every { bands }.returns(intArrayOf())
                             })
                         },
@@ -358,6 +376,7 @@ class NetworkStatusFlowTest {
         val telephonyManager = mockk<TelephonyManager>().apply {
             every { networkOperatorName }.returns("docomo")
             every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_NR)
+            every { networkOperator }.returns("44010")
             every { createForSubscriptionId(any()) }.returns(this)
             every { unregisterTelephonyCallback(any()) }.returns(Unit)
             every { signalStrength }.returns(mockk<SignalStrength>().apply {
@@ -377,6 +396,9 @@ class NetworkStatusFlowTest {
                             every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
                                 every { nrarfcn }.returns(703392)
                                 every { operatorAlphaShort }.returns("docomo")
+                                // null なら networkOperator から取る
+                                every { mccString }.returns(null)
+                                every { mncString }.returns(null)
                                 every { bands }.returns(intArrayOf())
                             })
                         },
@@ -411,13 +433,14 @@ class NetworkStatusFlowTest {
         // UnitTest で使えない Android の関数を全部モックしていく
 
         // SIM カードの枚数分 TelephonyManager のモックを用意する
-        val (sim1TelephonyManager, sim2TelephonyManager) = mapOf(
-            SIM_1_SUBSCRIPTION_ID to SIM_1_CARRIER_NAME,
-            SIM_2_SUBSCRIPTION_ID to SIM_2_CARRIER_NAME
-        ).map { (_, carrierName) ->
+        val (sim1TelephonyManager, sim2TelephonyManager) = listOf(
+            Triple(SIM_1_SUBSCRIPTION_ID, SIM_1_CARRIER_NAME, SIM_1_CARRIER_PLMN),
+            Triple(SIM_2_SUBSCRIPTION_ID, SIM_2_CARRIER_NAME, SIM_2_CARRIER_PLMN)
+        ).map { (_, carrierName, plmn) ->
             mockk<TelephonyManager>().apply {
                 every { networkOperatorName }.returns(carrierName)
                 every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
+                every { networkOperator }.returns(plmn)
                 every { unregisterTelephonyCallback(any()) }.returns(Unit)
                 every { signalStrength }.returns(mockk<SignalStrength>().apply {
                     every { getCellSignalStrengths<CellSignalStrengthNr>(any()) }.returns(listOf(mockk()))
@@ -434,6 +457,9 @@ class NetworkStatusFlowTest {
                                 every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
                                     every { nrarfcn }.returns(643334)
                                     every { operatorAlphaShort }.returns(carrierName)
+                                    // null なら networkOperator から取る
+                                    every { mccString }.returns(null)
+                                    every { mncString }.returns(null)
                                     every { bands }.returns(intArrayOf())
                                 })
                             }
@@ -466,6 +492,84 @@ class NetworkStatusFlowTest {
     }
 
     @Test
+    fun collectMultipleNetworkStatus_日本の通信キャリアの場合は提供しているバンドを優先的に探す() = runTest {
+        // Android 12 以上で
+        mockkObject(NetworkStatusFlow)
+        every { NetworkStatusFlow.getProperty("isAndroidSAndLater") }.returns(true)
+
+        // キャリア別で何パターンか試す
+        listOf(
+            // ドコモは n77 無いので n78 になるかチェック
+            Triple("44010", 643334, "n78"),
+            // au はあるので n77 そのまま返ってくることをチェック
+            Triple("44050", 643334, "n77"),
+            // softbank の転用は n20 ではなく n28 になるはず
+            Triple("44020", 159630, "n28"),
+            // 対応していないキャリアは NR-ARFCN の表から探してきたものが使われるはず
+            Triple("99999", 643334, "n48"),
+            Triple("99999", 159630, "n20")
+        ).forEach { (plmn, multipleBandNrarfcn, answerBand) ->
+
+            // mccString / mncString が使われるときと、
+            // ↑ が null で使えなかったときに networkOperator が代替で使えるかのテスト
+            listOf(
+                plmn.take(3) to plmn.takeLast(2),
+                null to null
+            ).forEach { (mcc, mnc) ->
+
+                // UnitTest で使えない Android の関数を全部モックしていく
+                val telephonyManager = mockk<TelephonyManager>().apply {
+                    every { networkOperatorName }.returns("docomo")
+                    every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
+                    every { networkOperator }.returns(plmn)
+                    every { createForSubscriptionId(any()) }.returns(this)
+                    every { unregisterTelephonyCallback(any()) }.returns(Unit)
+                    every { signalStrength }.returns(mockk<SignalStrength>().apply {
+                        every { getCellSignalStrengths<CellSignalStrengthNr>(any()) }.returns(listOf(mockk()))
+                    })
+                    // コールバックを呼び出して挙動を再現する
+                    every { registerTelephonyCallback(any(), any()) }.answers { call ->
+                        (call.invocation.args[1] as TelephonyCallback.CellInfoListener).onCellInfoChanged(emptyList())
+                    }
+                    // モックした CellInfo を返す
+                    every { requestCellInfoUpdate(any(), any()) }.answers { call ->
+                        (call.invocation.args[1] as TelephonyManager.CellInfoCallback).onCellInfo(
+                            listOf(
+                                mockk<CellInfoNr>().apply {
+                                    every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
+                                        every { nrarfcn }.returns(multipleBandNrarfcn)
+                                        every { operatorAlphaShort }.returns("docomo")
+                                        every { mccString }.returns(mcc)
+                                        every { mncString }.returns(mnc)
+                                        every { bands }.returns(intArrayOf())
+                                    })
+                                },
+                                // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
+                                mockk<CellInfoLte>()
+                            )
+                        )
+                    }
+                }
+
+                // Context#getSystemService をモック
+                val context = mockk<Context>().apply {
+                    every { getSystemService(eq(Context.TELEPHONY_SERVICE)) }.returns(telephonyManager)
+                    every { getSystemService(eq(Context.TELEPHONY_SUBSCRIPTION_SERVICE)) }.returns(createMockSubscriptionManager())
+                    every { mainExecutor }.returns(mockk())
+                }
+
+                val (firstSimNetworkStatusData, _) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first()
+                Assert.assertEquals(firstSimNetworkStatusData.finalNRType.isNr, true)
+                Assert.assertEquals(firstSimNetworkStatusData.bandData.isNR, true)
+                Assert.assertEquals(firstSimNetworkStatusData.bandData.band, answerBand)
+                Assert.assertEquals(firstSimNetworkStatusData.bandData.earfcn, multipleBandNrarfcn)
+            }
+
+        }
+
+    }
+
+    @Test
     fun collectMultipleNetworkStatus_アンカーバンドが検出できる_Android11以下() = runTest {
         // Android 11 以下で
         mockkObject(NetworkStatusFlow)
@@ -476,6 +580,7 @@ class NetworkStatusFlowTest {
         val telephonyManager = mockk<TelephonyManager>().apply {
             every { networkOperatorName }.returns("docomo")
             every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
+            every { networkOperator }.returns("44010")
             every { createForSubscriptionId(any()) }.returns(this)
             every { listen(any(), eq(PhoneStateListener.LISTEN_NONE)) }.returns(Unit)
             every { signalStrength }.returns(mockk<SignalStrength>().apply {
@@ -527,6 +632,7 @@ class NetworkStatusFlowTest {
         val telephonyManager = mockk<TelephonyManager>().apply {
             every { networkOperatorName }.returns("docomo")
             every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_LTE)
+            every { networkOperator }.returns("44010")
             every { createForSubscriptionId(any()) }.returns(this)
             every { listen(any(), eq(PhoneStateListener.LISTEN_NONE)) }.returns(Unit)
             // 5Gの電波強度をモックする
@@ -589,5 +695,7 @@ class NetworkStatusFlowTest {
         private const val SIM_2_SUBSCRIPTION_ID = 200
         private const val SIM_1_CARRIER_NAME = "docomo"
         private const val SIM_2_CARRIER_NAME = "au"
+        private const val SIM_1_CARRIER_PLMN = "44010"
+        private const val SIM_2_CARRIER_PLMN = "44050"
     }
 }

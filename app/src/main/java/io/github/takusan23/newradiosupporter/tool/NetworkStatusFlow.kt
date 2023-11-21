@@ -185,6 +185,9 @@ object NetworkStatusFlow {
             }
 
             NetworkStatusData(simSlotIndex, bandData, nrType, nrStandAloneType)
+        }.onFailure {
+            // runCatching 内での失敗を出力
+            it.printStackTrace()
         }.getOrNull()
 
         // 本当は非同期のコールバックAPIだけで良いはずだが、
@@ -289,8 +292,8 @@ object NetworkStatusFlow {
     /**
      * [CellInfo]を簡略化した[BandData]に変換する
      *
-     * @param mcc 通信キャリアの MCC
-     * @param mnc 通信キャリアの MNC
+     * @param mcc 通信キャリアの MCC。[CellIdentityNr.getMccString]が null の場合はこちらが使われる。
+     * @param mnc 通信キャリアの MNC。[CellIdentityNr.getMncString]が null の場合はこちらが使われる。
      * @param cellInfo [TelephonyCallback.CellInfoListener]で取れるやつ
      * @param carrierName キャリア名。[TelephonyManager.getNetworkOperatorName]
      * @return [BandData]。LTE/NR 以外はnullになります
@@ -322,7 +325,8 @@ object NetworkStatusFlow {
             val modemOrFallbackNrBand = cellIdentity.bands.firstOrNull()?.let { "n$it" } ?: BandDictionaryTool.toNrBand(nrarfcn)
 
             // 日本だけですが、通信キャリアが使っていない 5G バンドが返ってきたら修正を試みます。
-            val fixNrBand = BandDictionaryTool.tryFixNrBandOrNull(
+            // MCC MNC は null の可能性があるので引数からも取る
+            val fixNrBand = BandDictionaryTool.tryFixNrBand(
                 mcc = cellIdentity.mccString ?: mcc,
                 mnc = cellIdentity.mncString ?: mnc,
                 nrarfcn = nrarfcn,

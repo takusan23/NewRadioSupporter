@@ -36,21 +36,28 @@ class BandDictionaryToolTest {
 
     @Test
     fun toNRBand_NRARFCNをバンドに変換できる() {
-        val bandN78 = BandDictionaryTool.toNrBand(643334)
-        Assert.assertEquals(bandN78, "n78")
-        val bandN78_2 = BandDictionaryTool.toNrBand(643296)
-        Assert.assertEquals(bandN78_2, "n78")
-        val bandN79 = BandDictionaryTool.toNrBand(703392)
-        Assert.assertEquals(bandN79, "n79")
-        val bandList = BandDictionaryTool.toNrBandList(159630)
-        Assert.assertEquals(bandList, listOf("n28", "n20"))
-        // 700MHz 転用5G
-        val bandN28Docomo = BandDictionaryTool.toNrBand(157690)
-        Assert.assertEquals(bandN28Docomo, "n28")
-        val bandN28Au = BandDictionaryTool.toNrBand(155600)
-        Assert.assertEquals(bandN28Au, "n28")
-        val bandN28Softbank = BandDictionaryTool.toNrBand(159630)
-        Assert.assertEquals(bandN28Softbank, "n28")
+        val bandN79 = BandDictionaryTool.toNrBandList(703392)
+        Assert.assertEquals(bandN79, listOf("n79"))
+        // 700MHz 転用
+        val bandN28Docomo = BandDictionaryTool.toNrBandList(157690)
+        Assert.assertEquals(bandN28Docomo, listOf("n28"))
+        val bandN28Au = BandDictionaryTool.toNrBandList(155600)
+        Assert.assertEquals(bandN28Au, listOf("n28"))
+    }
+
+    @Test
+    fun toNrBandList_NRARFCNを複数のバンドに変換できる() {
+        // NR-ARFCN が複数のバンドに一致したときのテスト
+        val bandN77N78 = BandDictionaryTool.toNrBandList(635424)
+        Assert.assertEquals(bandN77N78, listOf("n77", "n78"))
+        val bandN257N258 = BandDictionaryTool.toNrBandList(2070015)
+        Assert.assertEquals(bandN257N258, listOf("n257", "n258"))
+        // NR-ARFCN が 643334 だと n48 n77 n78 に一致する
+        val bandN48N77N78 = BandDictionaryTool.toNrBandList(643334)
+        Assert.assertEquals(bandN48N77N78, listOf("n48", "n77", "n78"))
+        // 700MHz 転用
+        val bandN28Softbank = BandDictionaryTool.toNrBandList(159630)
+        Assert.assertEquals(bandN28Softbank, listOf("n20", "n28"))
     }
 
     @Test
@@ -81,6 +88,56 @@ class BandDictionaryToolTest {
         Assert.assertEquals(BandDictionaryTool.isLteFrequency(bandN78), false)
         val bandN78LteFrequency = 635424
         Assert.assertEquals(BandDictionaryTool.isLteFrequency(bandN78LteFrequency), true)
+    }
+
+    @Test
+    fun tryFixNrBand_日本の通信キャリアが使っている5Gバンドを優先的に探す() {
+        // 対応済みキャリア
+        val docomo = "440" to "10"
+        val au = "440" to "50"
+        val softbank = "440" to "20"
+        val rakuten = "440" to "11"
+        // バンド n48 n77 n78 に一致する NR-ARFCN
+        val nrarfcnN48N77N78 = 643334
+        // バンド n20 n28 に一致する NR-ARFCN
+        val nrarfcnN20N28 = 159630
+
+        // ドコモ なら n78
+        // au softbank 楽天 なら 77 になるべき
+        // フォールバックは NR-ARFCN の表から探してきたもの
+        nrarfcnN48N77N78.also { nrarfcn ->
+            val bandN48N77N78 = BandDictionaryTool.toNrBandList(nrarfcn)
+            val maybeBand = bandN48N77N78.first()
+            Assert.assertEquals(BandDictionaryTool.tryFixNrBand(docomo.first, docomo.second, nrarfcn, maybeBand), "n78")
+            Assert.assertEquals(BandDictionaryTool.tryFixNrBand(au.first, au.second, nrarfcn, maybeBand), "n77")
+            Assert.assertEquals(BandDictionaryTool.tryFixNrBand(softbank.first, softbank.second, nrarfcn, maybeBand), "n77")
+            Assert.assertEquals(BandDictionaryTool.tryFixNrBand(rakuten.first, rakuten.second, nrarfcn, maybeBand), "n77")
+        }
+
+        // ドコモ au softbank 楽天（？） ともに n28 になるべき
+        nrarfcnN20N28.also { nrarfcn ->
+            val bandN20N28 = BandDictionaryTool.toNrBandList(nrarfcn)
+            val maybeBand = bandN20N28.first()
+            Assert.assertEquals(BandDictionaryTool.tryFixNrBand(docomo.first, docomo.second, nrarfcn, maybeBand), "n28")
+            Assert.assertEquals(BandDictionaryTool.tryFixNrBand(au.first, au.second, nrarfcn, maybeBand), "n28")
+            Assert.assertEquals(BandDictionaryTool.tryFixNrBand(softbank.first, softbank.second, nrarfcn, maybeBand), "n28")
+            Assert.assertEquals(BandDictionaryTool.tryFixNrBand(rakuten.first, rakuten.second, nrarfcn, maybeBand), "n28")
+        }
+    }
+
+    @Test
+    fun tryFixNrBand_知らない通信キャリアの場合はそのまま返す() {
+        val unknownCarrier = "999" to "99"
+        // バンド n48 n77 n78 に一致する NR-ARFCN
+        val nrarfcnN48N77N78 = 643334
+        // バンド n20 n28 に一致する NR-ARFCN
+        val nrarfcnN20N28 = 159630
+
+        val bandN48 = BandDictionaryTool.toNrBandList(nrarfcnN48N77N78).first()
+        val bandN20 = BandDictionaryTool.toNrBandList(nrarfcnN20N28).first()
+
+        Assert.assertEquals(BandDictionaryTool.tryFixNrBand(unknownCarrier.first, unknownCarrier.second, nrarfcnN48N77N78, bandN48), "n48")
+        Assert.assertEquals(BandDictionaryTool.tryFixNrBand(unknownCarrier.first, unknownCarrier.second, nrarfcnN20N28, bandN20), "n20")
     }
 
 }

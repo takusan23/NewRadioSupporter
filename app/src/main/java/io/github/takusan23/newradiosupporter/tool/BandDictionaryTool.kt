@@ -137,10 +137,8 @@ object BandDictionaryTool {
         BandDictionaryData.Nr("n74", 295000, 303600, false),
         BandDictionaryData.Nr("n75", 286400, 303400, false),
         BandDictionaryData.Nr("n76", 285400, 286400, false),
-        // n77 の周波数の中に n78 が存在しているため、先に n78 が一致するか確認してから n77 の判定を行う
-        // n77 に対応していれば n78 にも対応していることになる
-        BandDictionaryData.Nr("n78", 620000, 653333, false),
         BandDictionaryData.Nr("n77", 620000, 680000, false),
+        BandDictionaryData.Nr("n78", 620000, 653333, false),
         BandDictionaryData.Nr("n79", 693334, 733333, false),
         BandDictionaryData.Nr("n85", 145600, 149200, false),
         BandDictionaryData.Nr("n90", 499200, 538000, false),
@@ -179,9 +177,9 @@ object BandDictionaryTool {
     /**
      * NR-ARFCN からバンドを出す。5G版。NRは「New Radio」らしい
      *
-     * TODO 複数のバンドを返す NR-ARFCN の場合は [tryFixNrBandOrNull] を使う
      * @return n79 とか返ってくると思う
      */
+    @Deprecated("toNrBandList を使う")
     fun toNrBand(nrarfcn: Int): String {
         return bandNrList.firstOrNull { bandDictionaryData ->
             // 範囲内にあれば
@@ -191,7 +189,12 @@ object BandDictionaryTool {
 
     /**
      * NR-ARFCN からバンドを出す。5G版。NRは「New Radio」らしい
-     * 複数のバンドが対象の場合はそれに従う
+     * NR-ARFCN が複数のバンドに一致する場合はこちらを使い、
+     * 日本の通信キャリアが使っているバンドを優先的に返すと良さそう
+     *
+     * @see [tryFixNrBand]
+     * @param nrarfcn NR-ARFCN
+     * @return ["n79"] みたいに返ってくるはず
      */
     fun toNrBandList(nrarfcn: Int): List<String> {
         return bandNrList.filter { bandDictionaryData ->
@@ -266,7 +269,6 @@ object BandDictionaryTool {
      */
     fun isLteFrequency(nrarfcn: Int): Boolean = toNrFrequencyMhz(nrarfcn) < SUB6_MIN_FREQUENCY_WITHOUT_LTE_FREQUENCY_MHZ
 
-
     /**
      * 5G バンドの修正を試みる
      * 詳しくは→ [CarrierNrBandDictionary]
@@ -277,7 +279,7 @@ object BandDictionaryTool {
      * @param bandNumber 修正前のバンド、[android.telephony.CellIdentityNr.getBands]や[toNrBand]の返り値
      * @return 修正できた場合はバンド、出来なかった場合は[bandNumber]をそのまま返す
      */
-    fun tryFixNrBandOrNull(mcc: String, mnc: String, nrarfcn: Int, bandNumber: String): String {
+    fun tryFixNrBand(mcc: String, mnc: String, nrarfcn: Int, bandNumber: String): String {
         // あらかじめ用意した、通信キャリアの提供している 5G バンドを取得する
         // 用意していないキャリアの場合はそのまま返す
         val provideNrBandNumberList = CarrierNrBandDictionary
