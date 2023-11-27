@@ -94,7 +94,7 @@ class BandDictionaryToolTest {
     fun tryFixNrBand_日本の通信キャリアが使っている5Gバンドを優先的に探す() {
         // 対応済みキャリア
         val docomo = "440" to "10"
-        val au = "440" to "50"
+        val au = "440" to "51"
         val softbank = "440" to "20"
         val rakuten = "440" to "11"
         // バンド n48 n77 n78 に一致する NR-ARFCN
