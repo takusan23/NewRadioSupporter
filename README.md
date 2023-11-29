@@ -36,8 +36,6 @@ https://play.google.com/store/apps/details?id=io.github.takusan23.newradiosuppor
 これは`NR-ARFCN`が複数のバンドに一致する場合、通信キャリアが提供しているバンドを優先して返すようにするためです。  
 （`NR-ARFCN`が`643334`だと`n48 n77 n78`のどれかになるらしい。対応表から探すと多分一番最初の`n48`になるけど、日本で`n48`使ってるところはないので`n77 n78`のどちらかになるはず。）
 
-// TODO 未リリース
-
 ![Imgur](https://imgur.com/S6JMkun.png)
 
 （提供しているバンドはソースコードに書きました、負けた気分）
