@@ -55,7 +55,7 @@ fun SettingScreen(
 
 /** プライバシーポリシーを開く */
 private fun openPrivacyPolicy(context: Context) {
-    val url = "https://github.com/takusan23/NewRadioSupporter/blob/master/PRIVACY_POLICY.md".toUri()
+    val url = "https://takusan.negitoro.dev/pages/new_radio_supporter_privacy_policy/".toUri()
     context.startActivity(Intent(Intent.ACTION_VIEW, url))
 }
 
