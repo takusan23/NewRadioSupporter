@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.ServiceManager
+import android.sysprop.TelephonyProperties
 import android.telephony.*
 import androidx.annotation.RequiresApi
 import com.android.internal.telephony.IPhoneStateListener
@@ -91,16 +92,18 @@ object ShizukuTool {
         val subscriptionInfo: SubscriptionInfo? = subscription.getActiveSubscriptionInfo(subscriptionId, telephony.currentPackageName, context.attributionTag)
         val simSlotIndex = subscriptionInfo?.simSlotIndex?.let { it + 1 } ?: 0
         val carrierName = subscriptionInfo?.carrierName.toString()
+        val mcc = subscriptionInfo?.mccString ?: ""
+        val mnc = subscriptionInfo?.mncString ?: ""
 
         fun sendResult() {
 
             // PhysicalChannelConfig の PhysicalCellId は UID がシステムアプリでないと取得できないようになっていた、
             // ほしいのは EARFCN で、EARFCN の重複を消したら多分 getAllCellInfo と PhysicalChannelConfigの配列 は同じ要素数になるはず？
             val nrBandList = cellInfoList.filterIsInstance<CellInfoNr>().map {
-                BandData.convertBandData(it, carrierName)
+                convertBandData(it, carrierName, mcc, mnc)
             }.distinctBy { it?.earfcn }.filterNotNull()
             val lteBandList = cellInfoList.filterIsInstance<CellInfoLte>().map {
-                BandData.convertBandData(it, carrierName)
+                convertBandData(it, carrierName, mcc, mnc)
             }.distinctBy { it?.earfcn }.filterNotNull()
 
             val nrPhysicalList = physicalChannelConfigList.filter {
@@ -117,12 +120,19 @@ object ShizukuTool {
                     TelephonyManager.NETWORK_TYPE_NR -> PhysicalChannelConfigData.NetworkType.NR
                     else -> PhysicalChannelConfigData.NetworkType.LTE
                 }
+                // Band=0 のときは PhysicalChannel ではなく CellInfo から
+                val bandData = if (physicalChannelConfig.band == PhysicalChannelConfig.BAND_UNKNOWN) {
+                    nrBandList.getOrNull(index)
+                } else {
+                    convertBandData(physicalChannelConfig, carrierName, mcc, mnc)
+                }
                 PhysicalChannelConfigData(
                     simSlotIndex = simSlotIndex,
                     cellType = cellType,
                     bandWidthMHz = physicalChannelConfig.cellBandwidthDownlinkKhz / 1000f,
                     networkType = networkType,
-                    bandData = nrBandList.getOrNull(index)
+                    // 0 のときはリストから探してくる
+                    bandData = bandData
                 )
             }
 
@@ -140,12 +150,18 @@ object ShizukuTool {
                     TelephonyManager.NETWORK_TYPE_NR -> PhysicalChannelConfigData.NetworkType.NR
                     else -> PhysicalChannelConfigData.NetworkType.LTE
                 }
+                // Band=0 のときは PhysicalChannel ではなく CellInfo から
+                val bandData = if (physicalChannelConfig.band == PhysicalChannelConfig.BAND_UNKNOWN) {
+                    lteBandList.getOrNull(index)
+                } else {
+                    convertBandData(physicalChannelConfig, carrierName, mcc, mnc)
+                }
                 PhysicalChannelConfigData(
                     simSlotIndex = simSlotIndex,
                     cellType = cellType,
                     bandWidthMHz = physicalChannelConfig.cellBandwidthDownlinkKhz / 1000f,
                     networkType = networkType,
-                    bandData = lteBandList.getOrNull(index)
+                    bandData = bandData
                 )
             }
 
@@ -163,6 +179,108 @@ object ShizukuTool {
                 cellInfoList = it
                 sendResult()
             }
+        }
+    }
+
+    /**
+     * [CellInfo]を簡略化した[BandData]に変換する
+     *
+     * @param cellInfo [TelephonyCallback.CellInfoListener]で取れるやつ
+     * @param carrierName キャリア名。[TelephonyManager.getNetworkOperatorName]
+     * @return [BandData]。LTE/NR 以外はnullになります
+     */
+    private fun convertBandData(
+        cellInfo: CellInfo,
+        carrierName: String,
+        mcc: String,
+        mnc: String
+    ) = when (val cellIdentity = cellInfo.cellIdentity) {
+        // LTE
+        is CellIdentityLte -> {
+            val earfcn = cellIdentity.earfcn
+            BandData(
+                isNR = false,
+                band = BandDictionaryTool.toLteBand(earfcn),
+                earfcn = earfcn,
+                carrierName = carrierName,
+                frequencyMHz = BandDictionaryTool.toLteFrequencyMhz(earfcn),
+            )
+        }
+        // 5G (NR)
+        is CellIdentityNr -> {
+            val nrarfcn = cellIdentity.nrarfcn
+            // 日本だけですが、通信キャリアが使っていない 5G バンドが返ってきたら修正を試みます。
+            // MCC MNC は null の可能性があるので引数からも取る
+            val modemOrFallbackNrBand = cellIdentity.bands.firstOrNull()?.let { "n$it" } ?: BandDictionaryTool.toNrBand(nrarfcn)
+            val fixNrBand = BandDictionaryTool.tryFixNrBand(
+                mcc = cellIdentity.mccString ?: mcc,
+                mnc = cellIdentity.mncString ?: mnc,
+                nrarfcn = nrarfcn,
+                bandNumber = modemOrFallbackNrBand
+            )
+
+            BandData(
+                isNR = true,
+                band = fixNrBand,
+                earfcn = nrarfcn,
+                carrierName = carrierName,
+                frequencyMHz = BandDictionaryTool.toNrFrequencyMhz(nrarfcn),
+            )
+        }
+
+        else -> null
+    }
+
+    /**
+     * [PhysicalChannelConfig]を簡略化した[BandData]に変換する
+     */
+    @RequiresApi(Build.VERSION_CODES.S)
+    private fun convertBandData(
+        physicalChannelConfig: PhysicalChannelConfig,
+        carrierName: String,
+        mcc: String,
+        mnc: String
+    ): BandData? {
+        return when (physicalChannelConfig.networkType) {
+            TelephonyManager.NETWORK_TYPE_LTE -> {
+                val earfcn = physicalChannelConfig.downlinkChannelNumber
+                BandData(
+                    isNR = false,
+                    band = BandDictionaryTool.toLteBand(earfcn),
+                    earfcn = earfcn,
+                    carrierName = carrierName,
+                    frequencyMHz = BandDictionaryTool.toLteFrequencyMhz(earfcn),
+                )
+            }
+
+            TelephonyManager.NETWORK_TYPE_NR -> {
+                val nrarfcn = physicalChannelConfig.downlinkChannelNumber
+                // 日本だけですが、通信キャリアが使っていない 5G バンドが返ってきたら修正を試みます。
+                // MCC MNC は null の可能性があるので引数からも取る
+                val modemOrFallbackNrBand = physicalChannelConfig.band.let {
+                    if (it != PhysicalChannelConfig.BAND_UNKNOWN) {
+                        "n$it"
+                    } else {
+                        BandDictionaryTool.toNrBand(nrarfcn)
+                    }
+                }
+                val fixNrBand = BandDictionaryTool.tryFixNrBand(
+                    mcc = mcc,
+                    mnc = mnc,
+                    nrarfcn = nrarfcn,
+                    bandNumber = modemOrFallbackNrBand
+                )
+
+                BandData(
+                    isNR = true,
+                    band = fixNrBand,
+                    earfcn = nrarfcn,
+                    carrierName = carrierName,
+                    frequencyMHz = BandDictionaryTool.toNrFrequencyMhz(nrarfcn),
+                )
+            }
+
+            else -> null
         }
     }
 
@@ -250,6 +368,7 @@ object ShizukuTool {
             )
         }
     }
+
 
     /** [ITelephonyRegistry.listenWithEventList]を後方互換性を持たせて呼び出す拡張関数 */
     private fun ITelephonyRegistry.compatListenWithEventList(
