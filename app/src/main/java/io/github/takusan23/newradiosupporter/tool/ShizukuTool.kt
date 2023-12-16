@@ -121,7 +121,7 @@ object ShizukuTool {
                     else -> PhysicalChannelConfigData.NetworkType.LTE
                 }
                 // downlinkChannelNumber=0 のときは PhysicalChannel ではなく CellInfo から
-                val bandData = if (physicalChannelConfig.downlinkChannelNumber == PhysicalChannelConfig.CHANNEL_NUMBER_UNKNOWN ) {
+                val bandData = if (physicalChannelConfig.downlinkChannelNumber == 0) {
                     nrBandList.getOrNull(index)
                 } else {
                     convertBandData(physicalChannelConfig, carrierName, mcc, mnc)
@@ -151,7 +151,7 @@ object ShizukuTool {
                     else -> PhysicalChannelConfigData.NetworkType.LTE
                 }
                 // downlinkChannelNumber=0 のときは PhysicalChannel ではなく CellInfo から
-                val bandData = if (physicalChannelConfig.downlinkChannelNumber == PhysicalChannelConfig.CHANNEL_NUMBER_UNKNOWN) {
+                val bandData = if (physicalChannelConfig.downlinkChannelNumber == 0) {
                     lteBandList.getOrNull(index)
                 } else {
                     convertBandData(physicalChannelConfig, carrierName, mcc, mnc)
