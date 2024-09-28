@@ -296,8 +296,8 @@ object ShizukuTool {
         subscriptionId: Int = defaultSubscriptionId
     ) = callbackFlow {
         val callback = object : TelephonyCallback(), TelephonyCallback.PhysicalChannelConfigListener {
-            override fun onPhysicalChannelConfigChanged(configs: MutableList<PhysicalChannelConfig>?) {
-                trySend(configs ?: emptyList())
+            override fun onPhysicalChannelConfigChanged(configs: MutableList<PhysicalChannelConfig>) {
+                trySend(configs)
             }
         }
         callback.init(context.mainExecutor)
@@ -339,8 +339,8 @@ object ShizukuTool {
         subscriptionId: Int = defaultSubscriptionId
     ) = callbackFlow {
         val callback = object : TelephonyCallback(), TelephonyCallback.CellInfoListener {
-            override fun onCellInfoChanged(cellInfo: MutableList<CellInfo>?) {
-                trySend(cellInfo ?: emptyList())
+            override fun onCellInfoChanged(cellInfo: MutableList<CellInfo>) {
+                trySend(cellInfo)
             }
         }
 
