@@ -259,9 +259,8 @@ object NetworkStatusFlow {
                 override fun onSubscriptionsChanged() {
                     // テストが通らないので runCatching
                     runCatching { super.onSubscriptionsChanged() }
-                    val subscriptionIdOrDefaultIdList = subscriptionManager.activeSubscriptionInfoList
-                        .map { it.subscriptionId }
-                        .ifEmpty { listOf(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID) }
+                    val subscriptionIdOrEmptyList = subscriptionManager.activeSubscriptionInfoList?.map { it.subscriptionId } ?: emptyList()
+                    val subscriptionIdOrDefaultIdList = subscriptionIdOrEmptyList.ifEmpty { listOf(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID) }
                     trySend(subscriptionIdOrDefaultIdList)
                 }
             }
