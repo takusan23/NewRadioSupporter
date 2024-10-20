@@ -18,6 +18,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import io.github.takusan23.newradiosupporter.R
+import io.github.takusan23.newradiosupporter.ui.WindowInsetsTool
 import io.github.takusan23.newradiosupporter.ui.component.BackIcon
 import io.github.takusan23.newradiosupporter.ui.component.CommonItem
 
@@ -41,7 +42,8 @@ fun SettingScreen(
                 title = { Text(text = stringResource(id = R.string.setting)) },
                 navigationIcon = { BackIcon(onClick = onBack) }
             )
-        }
+        },
+        contentWindowInsets = WindowInsetsTool.ScaffoldWindowInsets
     ) {
         Box(modifier = Modifier.padding(it)) {
             LazyColumn {

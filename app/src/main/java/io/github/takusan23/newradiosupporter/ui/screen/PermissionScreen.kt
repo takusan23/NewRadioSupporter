@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.takusan23.newradiosupporter.R
+import io.github.takusan23.newradiosupporter.ui.WindowInsetsTool
 
 /**
  * 権限下さい画面
@@ -34,7 +35,7 @@ fun PermissionScreen(
         }
     })
 
-    Scaffold {
+    Scaffold(contentWindowInsets = WindowInsetsTool.ScaffoldWindowInsets) {
         Column(
             modifier = Modifier
                 .padding(it)

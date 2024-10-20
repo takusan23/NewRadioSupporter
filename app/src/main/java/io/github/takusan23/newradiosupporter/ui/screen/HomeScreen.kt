@@ -5,8 +5,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumTopAppBar
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -18,7 +28,15 @@ import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
 import io.github.takusan23.newradiosupporter.tool.PermissionCheckTool
 import io.github.takusan23.newradiosupporter.tool.SettingIntentTool
-import io.github.takusan23.newradiosupporter.ui.component.*
+import io.github.takusan23.newradiosupporter.ui.WindowInsetsTool
+import io.github.takusan23.newradiosupporter.ui.component.AboutMenuIcon
+import io.github.takusan23.newradiosupporter.ui.component.BackgroundNrPermissionDialog
+import io.github.takusan23.newradiosupporter.ui.component.BackgroundServiceItem
+import io.github.takusan23.newradiosupporter.ui.component.BandItem
+import io.github.takusan23.newradiosupporter.ui.component.OpenMobileNetworkSettingMenu
+import io.github.takusan23.newradiosupporter.ui.component.SimNetWorkStatusExpanded
+import io.github.takusan23.newradiosupporter.ui.component.SimNetworkOverview
+import io.github.takusan23.newradiosupporter.ui.component.UnlimitedInfo
 
 /** 回線状態を表示している Card の tonalElevation */
 private val CardTonalElevation = 1.dp
@@ -49,7 +67,8 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                 actions = { AboutMenuIcon { onNavigate(NavigationLinkList.SettingScreen) } },
                 scrollBehavior = scrollBehavior
             )
-        }
+        },
+        contentWindowInsets = WindowInsetsTool.ScaffoldWindowInsets
     ) {
         Box(modifier = Modifier.padding(it)) {
 
