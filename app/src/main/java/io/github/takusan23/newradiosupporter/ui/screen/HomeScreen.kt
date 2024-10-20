@@ -1,7 +1,6 @@
 package io.github.takusan23.newradiosupporter.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -58,6 +57,12 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
 
     // バックグラウンドの権限ダイアログを出すか
     val isOpenBackgroundPermissionDialog = remember { mutableStateOf(false) }
+    if (isOpenBackgroundPermissionDialog.value) {
+        BackgroundNrPermissionDialog(
+            onDismissRequest = { isOpenBackgroundPermissionDialog.value = false },
+            onGranted = { BackgroundNrSupporter.toggleService(context) }
+        )
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -69,78 +74,70 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             )
         },
         contentWindowInsets = WindowInsetsTool.ScaffoldWindowInsets
-    ) {
-        Box(modifier = Modifier.padding(it)) {
+    ) { innerPadding ->
+        LazyColumn(
+            contentPadding = innerPadding,
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            // SIM カードの枚数分表示
+            items(multipleNetworkStatusDataList.value) { status ->
+                // 押したら展開できるようにするため
+                // 初期値はデータ通信に設定されたSIMカードのスロット番号
+                val isExpanded = remember { mutableStateOf(status.simSlotIndex == NetworkStatusFlow.getDataUsageSimSlotIndex(context)) }
 
-            // バックグラウンド 5G 通知機能の権限ダイアログ
-            if (isOpenBackgroundPermissionDialog.value) {
-                BackgroundNrPermissionDialog(
-                    onDismissRequest = { isOpenBackgroundPermissionDialog.value = false },
-                    onGranted = { BackgroundNrSupporter.toggleService(context) }
-                )
-            }
-
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                // SIM カードの枚数分表示
-                items(multipleNetworkStatusDataList.value) { status ->
-                    // 押したら展開できるようにするため
-                    // 初期値はデータ通信に設定されたSIMカードのスロット番号
-                    val isExpanded = remember { mutableStateOf(status.simSlotIndex == NetworkStatusFlow.getDataUsageSimSlotIndex(context)) }
-
-                    Card(
-                        modifier = Modifier.padding(top = 20.dp, start = 20.dp, end = 20.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(CardTonalElevation)),
-                        onClick = { isExpanded.value = !isExpanded.value }
-                    ) {
-                        // 押したら展開できるように
-                        if (isExpanded.value) {
-                            SimNetWorkStatusExpanded(
-                                modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                finalNRType = status.finalNRType,
-                                nrStandAloneType = status.nrStandAloneType
-                            )
-                            BandItem(
-                                modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                                bandData = status.bandData
-                            )
-                        } else {
-                            SimNetworkOverview(
-                                simIndex = status.simSlotIndex + 1,
-                                bandData = status.bandData,
-                                finalNRType = status.finalNRType,
-                                nrStandAloneType = status.nrStandAloneType,
-                            )
-                        }
-                    }
-
-                }
-                item {
-                    if (isUnlimitedNetwork.value != null) {
-                        UnlimitedInfo(
+                Card(
+                    modifier = Modifier.padding(top = 20.dp, start = 20.dp, end = 20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(CardTonalElevation)),
+                    onClick = { isExpanded.value = !isExpanded.value }
+                ) {
+                    // 押したら展開できるように
+                    if (isExpanded.value) {
+                        SimNetWorkStatusExpanded(
                             modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                            isUnlimited = isUnlimitedNetwork.value!!
+                            finalNRType = status.finalNRType,
+                            nrStandAloneType = status.nrStandAloneType
+                        )
+                        BandItem(
+                            modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                            bandData = status.bandData
+                        )
+                    } else {
+                        SimNetworkOverview(
+                            simIndex = status.simSlotIndex + 1,
+                            bandData = status.bandData,
+                            finalNRType = status.finalNRType,
+                            nrStandAloneType = status.nrStandAloneType,
                         )
                     }
                 }
-                item {
-                    OpenMobileNetworkSettingMenu(
+
+            }
+            item {
+                if (isUnlimitedNetwork.value != null) {
+                    UnlimitedInfo(
                         modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                        onClick = { SettingIntentTool.openMobileDataNetworkSetting(context) }
+                        isUnlimited = isUnlimitedNetwork.value!!
                     )
                 }
-                item {
-                    BackgroundServiceItem(
-                        modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                        onClick = {
-                            // 権限があれば起動
-                            if (PermissionCheckTool.isGrantedNotificationPermission(context) && PermissionCheckTool.isGrantedBackgroundLocationPermission(context)) {
-                                BackgroundNrSupporter.toggleService(context)
-                            } else {
-                                isOpenBackgroundPermissionDialog.value = true
-                            }
+            }
+            item {
+                OpenMobileNetworkSettingMenu(
+                    modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                    onClick = { SettingIntentTool.openMobileDataNetworkSetting(context) }
+                )
+            }
+            item {
+                BackgroundServiceItem(
+                    modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                    onClick = {
+                        // 権限があれば起動
+                        if (PermissionCheckTool.isGrantedNotificationPermission(context) && PermissionCheckTool.isGrantedBackgroundLocationPermission(context)) {
+                            BackgroundNrSupporter.toggleService(context)
+                        } else {
+                            isOpenBackgroundPermissionDialog.value = true
                         }
-                    )
-                }
+                    }
+                )
             }
         }
     }

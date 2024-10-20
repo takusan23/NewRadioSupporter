@@ -22,12 +22,14 @@ fun NewRadioSupporterMainScreen() {
 
         NavHost(navController = navController, startDestination = startDestination) {
             composable(NavigationLinkList.PermissionScreen) {
-                PermissionScreen(onGranted = {
-                    navController.navigate(NavigationLinkList.HomeScreen)
-                })
+                PermissionScreen(
+                    onGranted = { navController.navigate(NavigationLinkList.HomeScreen) }
+                )
             }
             composable(NavigationLinkList.HomeScreen) {
-                HomeScreen { navController.navigate(it) }
+                HomeScreen(
+                    onNavigate = { navController.navigate(it) }
+                )
             }
             composable(NavigationLinkList.SettingScreen) {
                 SettingScreen(
@@ -36,7 +38,9 @@ fun NewRadioSupporterMainScreen() {
                 )
             }
             composable(NavigationLinkList.SettingLicenseScreen) {
-                LicenseScreen { navController.popBackStack() }
+                LicenseScreen(
+                    onBack = { navController.popBackStack() }
+                )
             }
         }
     }
