@@ -35,7 +35,9 @@ fun NewRadioSupporterMainScreen() {
                 )
             }
             composable(NavigationLinkList.ShizukuPermissionScreen) {
-                ShizukuPermissionScreen { navController.navigate(NavigationLinkList.HomeScreen) }
+                ShizukuPermissionScreen(
+                    onGranted = { navController.navigate(NavigationLinkList.HomeScreen) }
+                )
             }
             composable(NavigationLinkList.HomeScreen) {
                 HomeScreen(
