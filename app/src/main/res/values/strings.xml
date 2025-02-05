@@ -47,4 +47,5 @@
     <string name="background_nr_permission_dialog_confirm">Grant permission</string>
     <string name="background_nr_permission_dialog_dismiss">Back</string>
     <string name="open_privacy_policy">Open privacy policy</string>
+    <string name="open_language_setting">Open the language settings screen</string>
 </resources>

@@ -48,4 +48,5 @@
     <string name="background_nr_permission_dialog_confirm">権限を付与する</string>
     <string name="background_nr_permission_dialog_dismiss">戻る</string>
     <string name="open_privacy_policy">プライバシーポリシーを開く</string>
+    <string name="open_language_setting">言語設定画面を開く</string>
 </resources>
