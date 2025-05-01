@@ -18,7 +18,8 @@
     <string name="connect_lte">4Gに接続中です。</string>
     <string name="connecting_band">接続中バンド</string>
     <string name="carrier_name">キャリア名</string>
-    <string name="earfcn">NRARFCN(EARFCN)</string>
+    <string name="earfcn">EARFCN</string>
+    <string name="nr_earfcn">NR-ARFCN</string>
     <string name="band_info">バンド情報</string>
     <string name="type_non_stand_alone_5g">ノンスタンドアローン方式(NSA) の5Gに接続中です。</string>
     <string name="type_stand_alone_5g">スタンドアローン方式(SA) の5Gに接続中です。</string>

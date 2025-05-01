@@ -1,7 +1,11 @@
 package io.github.takusan23.newradiosupporter.ui.component
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -32,32 +36,48 @@ fun SimNetWorkStatusExpanded(
     Column(
         modifier = modifier
             .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+
+        // sub6/mmWave アイコン、NSA/SA アイコン
         Row(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.SpaceAround
         ) {
+
             Icon(
-                painter = painterResource(id = R.drawable.ic_expand_less_24),
+                modifier = Modifier.size(100.dp),
+                painter = painterResource(
+                    id = when (finalNRType) {
+                        FinalNrType.ANCHOR_BAND -> R.drawable.ic_android_anchor_lte_band
+                        FinalNrType.NR_LTE_FREQUENCY -> R.drawable.android_nr_lte_freq_nr
+                        FinalNrType.NR_SUB6 -> R.drawable.ic_android_nr_sub6
+                        FinalNrType.NR_MMW -> R.drawable.ic_android_nr_mmw
+                        FinalNrType.LTE -> R.drawable.ic_android_lte
+                        else -> R.drawable.ic_outline_info_24
+                    }
+                ),
                 contentDescription = null
             )
+
+            val iconResId = when (nrStandAloneType) {
+                NrStandAloneType.STAND_ALONE -> R.drawable.android_5g_stand_alone
+                NrStandAloneType.NON_STAND_ALONE -> R.drawable.android_5g_non_stand_alone
+                NrStandAloneType.ERROR, null -> null // 4G なら NSA/SA アイコンを出さない
+            }
+            if (iconResId != null) {
+                Icon(
+                    modifier = Modifier.size(100.dp),
+                    painter = painterResource(id = iconResId),
+                    contentDescription = null
+                )
+            }
         }
-        Icon(
-            modifier = Modifier.size(100.dp),
-            painter = painterResource(id = when (finalNRType) {
-                FinalNrType.ANCHOR_BAND -> R.drawable.ic_android_anchor_lte_band
-                FinalNrType.NR_LTE_FREQUENCY -> R.drawable.android_nr_lte_freq_nr
-                FinalNrType.NR_SUB6 -> R.drawable.ic_android_nr_sub6
-                FinalNrType.NR_MMW -> R.drawable.ic_android_nr_mmw
-                FinalNrType.LTE -> R.drawable.ic_android_lte
-                else -> R.drawable.ic_outline_info_24
-            }),
-            contentDescription = null
-        )
+
         // メッセージ
         ConnectedStatusMessage(finalNRType = finalNRType)
+
         // 5Gの場合は NSA/SA どっちかを表示する
         if (nrStandAloneType != null && (finalNRType.isNr)) {
             ConnectedNrStandAloneMessage(nrStandAloneType)
@@ -68,15 +88,15 @@ fun SimNetWorkStatusExpanded(
 /** もし5Gに接続している場合は、スタンドアローン、ノンスタンドアローンのどっちに接続しているかを表示する */
 @Composable
 private fun ConnectedNrStandAloneMessage(nrStandAloneType: NrStandAloneType) {
-    val (icon, strId) = when (nrStandAloneType) {
-        NrStandAloneType.STAND_ALONE -> R.drawable.android_5g_stand_alone to R.string.type_stand_alone_5g
-        NrStandAloneType.NON_STAND_ALONE -> R.drawable.android_5g_non_stand_alone to R.string.type_non_stand_alone_5g
-        NrStandAloneType.ERROR -> R.drawable.ic_outline_4g_mobiledata_24 to R.string.type_lte
-    }
     MessageCard(
         cardColor = MaterialTheme.colorScheme.secondaryContainer,
-        iconRes = icon,
-        text = stringResource(id = strId)
+        text = stringResource(
+            id = when (nrStandAloneType) {
+                NrStandAloneType.STAND_ALONE -> R.string.type_stand_alone_5g
+                NrStandAloneType.NON_STAND_ALONE -> R.string.type_non_stand_alone_5g
+                NrStandAloneType.ERROR -> R.string.type_lte
+            }
+        )
     )
 }
 
@@ -84,8 +104,11 @@ private fun ConnectedNrStandAloneMessage(nrStandAloneType: NrStandAloneType) {
 @Composable
 private fun ConnectedStatusMessage(finalNRType: FinalNrType) {
     MessageCard(
-        cardColor = animateColorAsState(targetValue = if (finalNRType.isNr) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer).value,
-        iconRes = if (finalNRType.isNr) R.drawable.ic_outline_5g_24 else R.drawable.ic_outline_error_outline_24,
+        cardColor = if (finalNRType.isNr) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.errorContainer
+        },
         text = when (finalNRType) {
             FinalNrType.NR_MMW -> stringResource(id = R.string.type_nr_mmwave)
             FinalNrType.NR_SUB6 -> stringResource(id = R.string.type_nr_sub6)
@@ -103,31 +126,21 @@ private fun ConnectedStatusMessage(finalNRType: FinalNrType) {
  *
  * @param cardColor カードの色
  * @param text メッセージ
- * @param iconRes アイコンのリソースID
  */
 @Composable
 private fun MessageCard(
+    modifier: Modifier = Modifier,
     cardColor: Color,
     text: String,
-    iconRes: Int,
 ) {
     Surface(
-        modifier = Modifier.padding(10.dp),
+        modifier = modifier,
         color = cardColor,
-        shape = RoundedCornerShape(10.dp)
+        shape = RoundedCornerShape(30.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                modifier = Modifier
-                    .size(40.dp)
-                    .padding(end = 10.dp),
-                painter = painterResource(id = iconRes),
-                contentDescription = null
-            )
-            Text(text = text)
-        }
+        Text(
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+            text = text
+        )
     }
 }

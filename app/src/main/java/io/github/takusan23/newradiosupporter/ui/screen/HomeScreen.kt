@@ -1,16 +1,19 @@
 package io.github.takusan23.newradiosupporter.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
@@ -19,8 +22,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.takusan23.newradiosupporter.BackgroundNrSupporter
 import io.github.takusan23.newradiosupporter.R
@@ -79,39 +84,59 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             contentPadding = innerPadding,
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+
             // SIM カードの枚数分表示
             items(multipleNetworkStatusDataList.value) { status ->
+
                 // 押したら展開できるようにするため
                 // 初期値はデータ通信に設定されたSIMカードのスロット番号
                 val isExpanded = remember { mutableStateOf(status.simSlotIndex == NetworkStatusFlow.getDataUsageSimSlotIndex(context)) }
 
+                TextButton(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    onClick = { isExpanded.value = !isExpanded.value }
+                ) {
+                    Text(
+                        modifier = Modifier.weight(1f),
+                        text = "${stringResource(id = R.string.sim_network_overview_title)} ${status.simSlotIndex + 1} - ${status.bandData.carrierName}",
+                        fontSize = 16.sp
+                    )
+                    Icon(
+                        painter = painterResource(id = if (isExpanded.value) R.drawable.ic_expand_less_24 else R.drawable.ic_expand_more_24),
+                        contentDescription = null
+                    )
+                }
+
                 Card(
-                    modifier = Modifier.padding(top = 20.dp, start = 20.dp, end = 20.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(CardTonalElevation)),
                     onClick = { isExpanded.value = !isExpanded.value }
                 ) {
                     // 押したら展開できるように
                     if (isExpanded.value) {
-                        SimNetWorkStatusExpanded(
-                            modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                            finalNRType = status.finalNRType,
-                            nrStandAloneType = status.nrStandAloneType
-                        )
-                        BandItem(
-                            modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
-                            bandData = status.bandData
-                        )
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            SimNetWorkStatusExpanded(
+                                finalNRType = status.finalNRType,
+                                nrStandAloneType = status.nrStandAloneType
+                            )
+                            BandItem(
+                                modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp),
+                                bandData = status.bandData
+                            )
+                        }
                     } else {
                         SimNetworkOverview(
-                            simIndex = status.simSlotIndex + 1,
                             bandData = status.bandData,
                             finalNRType = status.finalNRType,
                             nrStandAloneType = status.nrStandAloneType,
                         )
                     }
                 }
-
             }
+
             item {
                 if (isUnlimitedNetwork.value != null) {
                     UnlimitedInfo(

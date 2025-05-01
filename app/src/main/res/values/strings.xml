@@ -17,7 +17,8 @@
     <string name="connect_lte">Connecting to 4G.</string>
     <string name="connecting_band">Connecting band</string>
     <string name="carrier_name">Carrier name</string>
-    <string name="earfcn">NRARFCN(EARFCN)</string>
+    <string name="earfcn">EARFCN</string>
+    <string name="nr_earfcn">NR-ARFCN</string>
     <string name="band_info">Band information</string>
     <string name="type_non_stand_alone_5g">You are connecting to non-standalone (NSA) 5G.</string>
     <string name="type_stand_alone_5g">You are connecting to Standalone (SA) 5G.</string>
