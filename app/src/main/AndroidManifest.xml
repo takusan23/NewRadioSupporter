@@ -10,6 +10,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
+    <!-- Logcat から PhysicalChanelConfig を取得する試み -->
+    <uses-permission android:name="android.permission.READ_LOGS" />
+
     <application
         android:allowBackup="true"
         android:enableOnBackInvokedCallback="true"
