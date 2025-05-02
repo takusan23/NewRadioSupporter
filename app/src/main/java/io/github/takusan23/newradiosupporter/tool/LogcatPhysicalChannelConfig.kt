@@ -1,5 +1,7 @@
 package io.github.takusan23.newradiosupporter.tool
 
+import io.github.takusan23.newradiosupporter.tool.data.BandData
+import io.github.takusan23.newradiosupporter.tool.data.LogcatPhysicalChannelConfigResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
@@ -34,8 +36,48 @@ object LogcatPhysicalChannelConfig {
      */
     private val PHYSICAL_CHANNEL_CONFIG_UPDATE_CONFIGS_LOG_REGEX = "\\{mConnectionStatus=(.*?),mCellBandwidthDownlinkKhz=(.*?),mCellBandwidthUplinkKhz=(.*?),mNetworkType=(.*?),mFrequencyRange=(.*?),mDownlinkChannelNumber=(.*?),mUplinkChannelNumber=(.*?),mContextIds=(.*?),mPhysicalCellId=(.*?),mBand=(.*?),mDownlinkFrequency=(.*?),mUplinkFrequency=(.*?)\\}".toRegex()
 
+    /** Logcat から[LogcatPhysicalChannelConfigResult]を取得する */
+    fun listenLogcatPhysicalChannelConfig() = listenLogcatAndConvertPhysicalChannelConfig().map { configs ->
+
+        // TODO mBand が 0 、バンドの修正。多分 PCI と照らし合わせれば良いはず
+        fun PhysicalChannelConfigLog.convertBandData(): BandData? {
+            return BandData(
+                isNR = mNetworkType == "NR",
+                band = mBand ?: return null,
+                earfcn = mDownlinkChannelNumber?.toIntOrNull() ?: return null,
+                carrierName = "",
+                frequencyMHz = mDownlinkFrequency?.toFloat() ?: return null
+            )
+        }
+
+        val primaryCell = configs
+            .filter { it.mConnectionStatus == "PrimaryServing" }
+            .firstNotNullOfOrNull { it.convertBandData() } ?: return@map null
+        val secondaryCellList = configs
+            .filter { it.mConnectionStatus == "SecondaryServing" }
+            .mapNotNull { it.convertBandData() }
+
+        when {
+
+            // 5G が複数あれば NrCa にする
+            2 <= secondaryCellList.count { it.isNR } -> LogcatPhysicalChannelConfigResult.NrCa(
+                primaryCell = primaryCell,
+                secondaryCellList = secondaryCellList
+            )
+
+            // セカンダリーセルがあれば Endc
+            secondaryCellList.isNotEmpty() -> LogcatPhysicalChannelConfigResult.Endc(
+                primaryCell = primaryCell,
+                secondaryCell = secondaryCellList.first()
+            )
+
+            // ない
+            else -> null
+        }
+    }
+
     /** Logcat を購読して PhysicalChannelConfig の値を取り出す */
-    fun listenLogcatPhysicalChannelConfig() = listenLogcat()
+    private fun listenLogcatAndConvertPhysicalChannelConfig() = listenLogcat()
         .filter { it.message.contains("Physical channel configs updated", ignoreCase = true) }
         .map { logCatData ->
 
@@ -69,7 +111,7 @@ object LogcatPhysicalChannelConfig {
                 )
             } ?: emptyList()
 
-            LogcatPhysicalChannelConfigData(updateLog, configs)
+            configs
         }
 
 
@@ -92,27 +134,8 @@ object LogcatPhysicalChannelConfig {
         }
     }.flowOn(Dispatchers.IO)
 
-    /**
-     * [listenLogcatPhysicalChannelConfig]の値
-     *
-     * @param updateLog Logcat の値
-     * @param configs [PhysicalChannelConfigLog]の配列。キャリアアグリゲーションしていれば、ここにバンドとかが格納される。
-     */
-    data class LogcatPhysicalChannelConfigData(
-        val updateLog: PhysicalChannelConfigUpdateLog,
-        val configs: List<PhysicalChannelConfigLog>
-    )
-
-    /** PhysicalChanelConfig が入っているログ */
-    data class PhysicalChannelConfigUpdateLog(
-        val mLastAnchorNrCellId: String?,
-        val mRatchetedNrBandwidths: String?,
-        val mRatchetedNrBands: String?,
-        val mPhysicalChannelConfigs: String?
-    )
-
     /** Logcat から取り出した PhysicalChannelConfig */
-    data class PhysicalChannelConfigLog(
+    private data class PhysicalChannelConfigLog(
         val mConnectionStatus: String?,
         val mCellBandwidthDownlinkKhz: String?,
         val mCellBandwidthUplinkKhz: String?,
@@ -125,6 +148,14 @@ object LogcatPhysicalChannelConfig {
         val mBand: String?,
         val mDownlinkFrequency: String?,
         val mUplinkFrequency: String?
+    )
+
+    /** PhysicalChanelConfig が入っているログ */
+    private data class PhysicalChannelConfigUpdateLog(
+        val mLastAnchorNrCellId: String?,
+        val mRatchetedNrBandwidths: String?,
+        val mRatchetedNrBands: String?,
+        val mPhysicalChannelConfigs: String?
     )
 
     /** Logcat のログ */
