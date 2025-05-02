@@ -2,9 +2,11 @@ package io.github.takusan23.newradiosupporter.ui.screen
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.takusan23.newradiosupporter.BackgroundNrSupporter
 import io.github.takusan23.newradiosupporter.R
+import io.github.takusan23.newradiosupporter.tool.LogcatPhysicalChannelConfig
 import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
 import io.github.takusan23.newradiosupporter.tool.PermissionCheckTool
 import io.github.takusan23.newradiosupporter.tool.SettingIntentTool
@@ -34,6 +37,7 @@ import io.github.takusan23.newradiosupporter.ui.component.BackgroundNrPermission
 import io.github.takusan23.newradiosupporter.ui.component.BackgroundServiceItem
 import io.github.takusan23.newradiosupporter.ui.component.BandItem
 import io.github.takusan23.newradiosupporter.ui.component.NetworkStatusTitle
+import io.github.takusan23.newradiosupporter.ui.component.LogcatPhysicalChannelConfigInfo
 import io.github.takusan23.newradiosupporter.ui.component.OpenMobileNetworkSettingMenu
 import io.github.takusan23.newradiosupporter.ui.component.SimNetWorkStatusExpanded
 import io.github.takusan23.newradiosupporter.ui.component.SimNetworkOverview
@@ -56,6 +60,10 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
     // Flowで収集する
     val isUnlimitedNetwork = NetworkStatusFlow.collectUnlimitedNetwork(context).collectAsStateWithLifecycle(initialValue = null)
     val multipleNetworkStatusDataList = NetworkStatusFlow.collectMultipleNetworkStatus(context).collectAsStateWithLifecycle(initialValue = emptyList())
+
+    // Logcat から PhysicalChannelConfig を取得する
+    val logcatPhysicalChannelConfigResult = LogcatPhysicalChannelConfig.listenLogcatPhysicalChannelConfig().collectAsStateWithLifecycle(initialValue = null)
+    val isEnableLogcat = logcatPhysicalChannelConfigResult.value != null
 
     // バックグラウンドの権限ダイアログを出すか
     val isOpenBackgroundPermissionDialog = remember { mutableStateOf(false) }
@@ -100,7 +108,12 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
                 Card(
                     modifier = Modifier.padding(horizontal = 20.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(CardTonalElevation)),
-                    onClick = { isExpanded.value = !isExpanded.value }
+                    onClick = { isExpanded.value = !isExpanded.value },
+                    shape = if (isEnableLogcat) {
+                        RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 5.dp, bottomStart = 5.dp)
+                    } else {
+                        RoundedCornerShape(20.dp)
+                    }
                 ) {
                     // 押したら展開できるように
                     if (isExpanded.value) {
@@ -122,6 +135,30 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
                             bandData = status.bandData,
                             finalNRType = status.finalNRType,
                             nrStandAloneType = status.nrStandAloneType,
+                        )
+                    }
+                }
+
+                // Logcat から取り出した PhysicalChannelConfig の情報
+                if (isEnableLogcat) {
+                    Card(
+                        modifier = Modifier
+                            .padding(horizontal = 20.dp)
+                            .padding(top = 5.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(CardTonalElevation)),
+                        onClick = { isExpanded.value = !isExpanded.value },
+                        shape = if (isEnableLogcat) {
+                            RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
+                        } else {
+                            RoundedCornerShape(20.dp)
+                        }
+                    ) {
+                        LogcatPhysicalChannelConfigInfo(
+                            modifier = Modifier
+                                .padding(20.dp)
+                                .fillMaxWidth(),
+                            result = logcatPhysicalChannelConfigResult.value!!,
+                            isExpanded = isExpanded.value
                         )
                     }
                 }
