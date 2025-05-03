@@ -1,12 +1,17 @@
 package io.github.takusan23.newradiosupporter.tool
 
+import android.content.Context
+import android.telephony.TelephonyManager
 import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.LogcatPhysicalChannelConfigResult
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.yield
 import java.io.InputStreamReader
 
@@ -27,7 +32,7 @@ object LogcatPhysicalChannelConfig {
      * PhysicalChannelConfig が入っているログの正規表現
      * https://cs.android.com/android/platform/superproject/main/+/main:frameworks/opt/telephony/src/java/com/android/internal/telephony/NetworkTypeController.java;drc=4b1786fab7e144d982b86c4f1ce00a9982a036a1;l=1340
      */
-    private val PHYSICAL_CHANNEL_CONFIG_UPDATE_LOG_REGEX = "Physical channel configs updated: anchorNrCell=(.*?), nrBandwidths=(.*?), nrBands=(.*?), configs=(.*)".toRegex()
+    private val PHYSICAL_CHANNEL_CONFIG_UPDATE_LOG_REGEX = "[(.*?)] Physical channel configs updated: anchorNrCell=(.*?), nrBandwidths=(.*?), nrBands=(.*?), configs=(.*)".toRegex()
 
     /**
      * TODO Android 15 / 16 のみ動作確認済み
@@ -37,44 +42,69 @@ object LogcatPhysicalChannelConfig {
     private val PHYSICAL_CHANNEL_CONFIG_UPDATE_CONFIGS_LOG_REGEX = "\\{mConnectionStatus=(.*?),mCellBandwidthDownlinkKhz=(.*?),mCellBandwidthUplinkKhz=(.*?),mNetworkType=(.*?),mFrequencyRange=(.*?),mDownlinkChannelNumber=(.*?),mUplinkChannelNumber=(.*?),mContextIds=(.*?),mPhysicalCellId=(.*?),mBand=(.*?),mDownlinkFrequency=(.*?),mUplinkFrequency=(.*?)\\}".toRegex()
 
     /** Logcat から[LogcatPhysicalChannelConfigResult]を取得する */
-    fun listenLogcatPhysicalChannelConfig() = listenLogcatAndConvertPhysicalChannelConfig().map { configs ->
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun listenLogcatPhysicalChannelConfig(
+        context: Context,
+        subscriptionId: Int
+    ) = listenLogcatAndConvertPhysicalChannelConfig()
+        .filter { it.first.subscriptionId == subscriptionId }
+        .mapLatest { (_, configs) ->
 
-        // TODO mBand が 0 、バンドの修正。多分 PCI と照らし合わせれば良いはず
-        fun PhysicalChannelConfigLog.convertBandData(): BandData? {
-            return BandData(
-                isNR = mNetworkType == "NR",
-                band = mBand ?: return null,
-                earfcn = mDownlinkChannelNumber?.toIntOrNull() ?: return null,
-                carrierName = "",
-                frequencyMHz = mDownlinkFrequency?.toFloat() ?: return null
-            )
+            // バンドを取得できない端末がある
+            // が、代わりに PCI が取れているので、 getCellInfo() から探す
+            val telephonyManager = (context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager).createForSubscriptionId(subscriptionId)
+            val bandList = NetworkStatusFlow.awaitRequestCellInfoUpdate(context, telephonyManager).mapNotNull {
+                // MCC/MNC
+                val (mcc, mnc) = telephonyManager.networkOperator
+                    .let { plmn -> plmn.take(3) to plmn.takeLast(2) }
+                NetworkStatusFlow.convertBandData(
+                    mcc = mcc,
+                    mnc = mnc,
+                    cellInfo = it,
+                    carrierName = telephonyManager.networkOperatorName,
+                )
+            }
+
+            fun PhysicalChannelConfigLog.convertBandData(): BandData? {
+                // TelephonyManager#getCellInfo の結果に同じ PCI があればそちらを優先
+                return bandList.firstOrNull {
+                    it.pci == mPhysicalCellId?.toIntOrNull()
+                } ?: BandData(
+                    isNR = mNetworkType == "NR",
+                    band = mBand ?: return null,
+                    earfcn = mDownlinkChannelNumber?.toIntOrNull() ?: return null,
+                    carrierName = "",
+                    frequencyMHz = mDownlinkFrequency?.toFloat() ?: return null,
+                    pci = mPhysicalCellId?.toIntOrNull() ?: 0
+                )
+            }
+
+            val primaryCell = configs
+                .filter { it.mConnectionStatus == "PrimaryServing" }
+                .firstNotNullOfOrNull { it.convertBandData() } ?: return@mapLatest null
+            val secondaryCellList = configs
+                .filter { it.mConnectionStatus == "SecondaryServing" }
+                .mapNotNull { it.convertBandData() }
+
+            when {
+
+                // セカンダリーセルが複数あればキャリアアグリゲーション
+                2 <= secondaryCellList.size -> LogcatPhysicalChannelConfigResult.CarrierAggregation(
+                    primaryCell = primaryCell,
+                    secondaryCellList = secondaryCellList
+                )
+
+                // セカンダリーセルが一つあれば Endc
+                secondaryCellList.isNotEmpty() -> LogcatPhysicalChannelConfigResult.Endc(
+                    primaryCell = primaryCell,
+                    secondaryCell = secondaryCellList.first()
+                )
+
+                // ない
+                else -> null
+            }
         }
-
-        val primaryCell = configs
-            .filter { it.mConnectionStatus == "PrimaryServing" }
-            .firstNotNullOfOrNull { it.convertBandData() } ?: return@map null
-        val secondaryCellList = configs
-            .filter { it.mConnectionStatus == "SecondaryServing" }
-            .mapNotNull { it.convertBandData() }
-
-        when {
-
-            // 5G が複数あれば NrCa にする
-            2 <= secondaryCellList.count { it.isNR } -> LogcatPhysicalChannelConfigResult.NrCa(
-                primaryCell = primaryCell,
-                secondaryCellList = secondaryCellList
-            )
-
-            // セカンダリーセルがあれば Endc
-            secondaryCellList.isNotEmpty() -> LogcatPhysicalChannelConfigResult.Endc(
-                primaryCell = primaryCell,
-                secondaryCell = secondaryCellList.first()
-            )
-
-            // ない
-            else -> null
-        }
-    }
+        .filterNotNull()
 
     /** Logcat を購読して PhysicalChannelConfig の値を取り出す */
     private fun listenLogcatAndConvertPhysicalChannelConfig() = listenLogcat()
@@ -84,10 +114,11 @@ object LogcatPhysicalChannelConfig {
             // ログから正規表現で取り出す
             val updateLogRegexResult = PHYSICAL_CHANNEL_CONFIG_UPDATE_LOG_REGEX.find(logCatData.message)?.groupValues
             val updateLog = PhysicalChannelConfigUpdateLog(
-                mLastAnchorNrCellId = updateLogRegexResult?.getOrNull(1),
-                mRatchetedNrBandwidths = updateLogRegexResult?.getOrNull(2),
-                mRatchetedNrBands = updateLogRegexResult?.getOrNull(3),
-                mPhysicalChannelConfigs = updateLogRegexResult?.getOrNull(4)
+                subscriptionId = updateLogRegexResult?.getOrNull(1)?.toIntOrNull(),
+                mLastAnchorNrCellId = updateLogRegexResult?.getOrNull(2),
+                mRatchetedNrBandwidths = updateLogRegexResult?.getOrNull(3),
+                mRatchetedNrBands = updateLogRegexResult?.getOrNull(4),
+                mPhysicalChannelConfigs = updateLogRegexResult?.getOrNull(5)
             )
 
             // configs が取れていれば
@@ -111,7 +142,7 @@ object LogcatPhysicalChannelConfig {
                 )
             } ?: emptyList()
 
-            configs
+            updateLog to configs
         }
 
 
@@ -152,6 +183,7 @@ object LogcatPhysicalChannelConfig {
 
     /** PhysicalChanelConfig が入っているログ */
     private data class PhysicalChannelConfigUpdateLog(
+        val subscriptionId: Int?,
         val mLastAnchorNrCellId: String?,
         val mRatchetedNrBandwidths: String?,
         val mRatchetedNrBands: String?,
