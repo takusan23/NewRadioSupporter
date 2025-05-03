@@ -7,14 +7,18 @@ import android.telephony.TelephonyManager
 import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.LogcatPhysicalChannelConfigResult
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.yield
 import java.io.InputStreamReader
 
@@ -46,75 +50,103 @@ object LogcatPhysicalChannelConfig {
 
     /** Logcat から[LogcatPhysicalChannelConfigResult]を取得する */
     @SuppressLint("MissingPermission")
-    @OptIn(ExperimentalCoroutinesApi::class)
-    fun listenLogcatPhysicalChannelConfig(
-        context: Context,
-        subscriptionId: Int
-    ): Flow<LogcatPhysicalChannelConfigResult> {
-        // phoneId は SIM スロット番号っぽいので、SubsciptionManager から問い合わせる
+    fun listenLogcatPhysicalChannelConfig(context: Context) = channelFlow {
         val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
-        val simSlotIndex = subscriptionManager.getActiveSubscriptionInfo(subscriptionId).simSlotIndex
 
-        return listenLogcatAndConvertPhysicalChannelConfig()
-            .filter { it.first.phoneId == simSlotIndex }
-            .mapLatest { (_, configs) ->
+        // Logcat から PhysicalChannelConfig を得る
+        // SIM カードの枚数分購読するので、StateFlow にして使い回す
+        val logcatPhysicalChannelConfigFlow = listenLogcatAndConvertPhysicalChannelConfig().stateIn(
+            scope = this,
+            started = SharingStarted.Lazily,
+            initialValue = null
+        )
 
-                // バンドを取得できない端末がある
-                // が、代わりに PCI が取れているので、 getCellInfo() から探す
-                val telephonyManager = (context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager).createForSubscriptionId(subscriptionId)
-                val bandList = NetworkStatusFlow.awaitRequestCellInfoUpdate(context, telephonyManager).mapNotNull {
-                    // MCC/MNC
-                    val (mcc, mnc) = telephonyManager.networkOperator
-                        .let { plmn -> plmn.take(3) to plmn.takeLast(2) }
-                    NetworkStatusFlow.convertBandData(
-                        mcc = mcc,
-                        mnc = mnc,
-                        cellInfo = it,
-                        carrierName = telephonyManager.networkOperatorName,
-                    )
+        // SIM カードの枚数分返すので
+        // カードスロットと LogcatPhysicalChannelConfigResult の Map
+        val resultSlotIndexAndConfigMap = hashMapOf<Int, LogcatPhysicalChannelConfigResult>()
+        NetworkStatusFlow.collectMultipleSimSubscriptionIdList(context).collectLatest { subscriptionIdList ->
+            subscriptionIdList
+                .map { subscriptionId ->
+                    // phoneId は SIM スロット番号っぽいので、SubscriptionManager から問い合わせる
+                    val simSlotIndex = subscriptionManager.getActiveSubscriptionInfo(subscriptionId).simSlotIndex
+                    // SIM カードスロットに対応した TelephonyManager を作る
+                    val telephonyManager = (context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager)
+                        .createForSubscriptionId(subscriptionId)
+
+                    // SIMスロットに対応した Logcat を取り出す
+                    logcatPhysicalChannelConfigFlow
+                        .filterNotNull()
+                        .filter { (updateLog, _) -> updateLog.phoneId == simSlotIndex }
+                        .onEach { (_, configs) ->
+
+                            // バンドを取得できない端末がある
+                            // が、代わりに PCI が取れているので、 getCellInfo() の中に PCI があれば、それを使う
+                            val bandList = NetworkStatusFlow.awaitRequestCellInfoUpdate(context, telephonyManager).mapNotNull {
+                                // MCC/MNC
+                                val (mcc, mnc) = telephonyManager.networkOperator
+                                    .let { plmn -> plmn.take(3) to plmn.takeLast(2) }
+                                NetworkStatusFlow.convertBandData(
+                                    mcc = mcc,
+                                    mnc = mnc,
+                                    cellInfo = it,
+                                    carrierName = telephonyManager.networkOperatorName,
+                                )
+                            }
+
+                            fun PhysicalChannelConfigLog.convertBandData(): BandData? {
+                                // TelephonyManager#getCellInfo の結果に同じ PCI があればそちらを優先
+                                return bandList.firstOrNull {
+                                    it.pci == mPhysicalCellId?.toIntOrNull()
+                                } ?: BandData(
+                                    isNR = mNetworkType == "NR",
+                                    band = mBand ?: return null,
+                                    earfcn = mDownlinkChannelNumber?.toIntOrNull() ?: return null,
+                                    carrierName = "",
+                                    frequencyMHz = mDownlinkFrequency?.toFloat() ?: return null,
+                                    pci = mPhysicalCellId?.toIntOrNull() ?: 0
+                                )
+                            }
+
+                            val primaryCell = configs
+                                .filter { it.mConnectionStatus == "PrimaryServing" }
+                                .firstNotNullOfOrNull { it.convertBandData() }
+                            val secondaryCellList = configs
+                                .filter { it.mConnectionStatus == "SecondaryServing" }
+                                .mapNotNull { it.convertBandData() }
+
+                            // 返す
+                            val physicalChannelConfigResult = when {
+
+                                // プライマリーセルが取れてないなら、そもそもダメなので null
+                                primaryCell == null -> null
+
+                                // セカンダリーセルが複数あればキャリアアグリゲーション
+                                2 <= secondaryCellList.size -> LogcatPhysicalChannelConfigResult.CarrierAggregation(
+                                    primaryCell = primaryCell,
+                                    secondaryCellList = secondaryCellList
+                                )
+
+                                // セカンダリーセルが一つあれば Endc
+                                secondaryCellList.isNotEmpty() -> LogcatPhysicalChannelConfigResult.Endc(
+                                    primaryCell = primaryCell,
+                                    secondaryCell = secondaryCellList.first()
+                                )
+
+                                // ない
+                                else -> null
+                            }
+
+                            // 更新して、Flow で送る
+                            if (physicalChannelConfigResult != null) {
+                                resultSlotIndexAndConfigMap[simSlotIndex] = physicalChannelConfigResult
+                            }
+                            trySend(resultSlotIndexAndConfigMap)
+                        }
                 }
-
-                fun PhysicalChannelConfigLog.convertBandData(): BandData? {
-                    // TelephonyManager#getCellInfo の結果に同じ PCI があればそちらを優先
-                    return bandList.firstOrNull {
-                        it.pci == mPhysicalCellId?.toIntOrNull()
-                    } ?: BandData(
-                        isNR = mNetworkType == "NR",
-                        band = mBand ?: return null,
-                        earfcn = mDownlinkChannelNumber?.toIntOrNull() ?: return null,
-                        carrierName = "",
-                        frequencyMHz = mDownlinkFrequency?.toFloat() ?: return null,
-                        pci = mPhysicalCellId?.toIntOrNull() ?: 0
-                    )
-                }
-
-                val primaryCell = configs
-                    .filter { it.mConnectionStatus == "PrimaryServing" }
-                    .firstNotNullOfOrNull { it.convertBandData() } ?: return@mapLatest null
-                val secondaryCellList = configs
-                    .filter { it.mConnectionStatus == "SecondaryServing" }
-                    .mapNotNull { it.convertBandData() }
-
-                when {
-
-                    // セカンダリーセルが複数あればキャリアアグリゲーション
-                    2 <= secondaryCellList.size -> LogcatPhysicalChannelConfigResult.CarrierAggregation(
-                        primaryCell = primaryCell,
-                        secondaryCellList = secondaryCellList
-                    )
-
-                    // セカンダリーセルが一つあれば Endc
-                    secondaryCellList.isNotEmpty() -> LogcatPhysicalChannelConfigResult.Endc(
-                        primaryCell = primaryCell,
-                        secondaryCell = secondaryCellList.first()
-                    )
-
-                    // ない
-                    else -> null
-                }
-            }
-            .filterNotNull()
-    }
+                .merge()
+                .launchIn(this)
+        }
+    }.filter { it.isNotEmpty() }
 
     /** Logcat を購読して PhysicalChannelConfig の値を取り出す */
     private fun listenLogcatAndConvertPhysicalChannelConfig() = listenLogcat()

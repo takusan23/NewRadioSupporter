@@ -1,6 +1,5 @@
 package io.github.takusan23.newradiosupporter.ui.screen
 
-import android.telephony.SubscriptionManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -63,10 +62,7 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
     val multipleNetworkStatusDataList = NetworkStatusFlow.collectMultipleNetworkStatus(context).collectAsStateWithLifecycle(initialValue = emptyList())
 
     // Logcat から PhysicalChannelConfig を取得する
-    val logcatPhysicalChannelConfigResult = remember {
-        LogcatPhysicalChannelConfig.listenLogcatPhysicalChannelConfig(context = context, subscriptionId = SubscriptionManager.getActiveDataSubscriptionId())
-    }.collectAsStateWithLifecycle(initialValue = null)
-    val isEnableLogcat = logcatPhysicalChannelConfigResult.value != null
+    val configResultList = LogcatPhysicalChannelConfig.listenLogcatPhysicalChannelConfig(context = context).collectAsStateWithLifecycle(initialValue = null)
 
     // バックグラウンドの権限ダイアログを出すか
     val isOpenBackgroundPermissionDialog = remember { mutableStateOf(false) }
@@ -99,6 +95,8 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
                 // 押したら展開できるようにするため
                 // 初期値はデータ通信に設定されたSIMカード
                 val isExpanded = remember { mutableStateOf(status.simInfo.subscriptionId == NetworkStatusFlow.getDataUsageSubscriptionId()) }
+                // 狙った SIM カードの LogcatPhysicalChannelConfigResult があるか
+                val configResult = configResultList.value?.get(status.simInfo.subscriptionId)
 
                 // 見出し
                 NetworkStatusTitle(
@@ -112,7 +110,7 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
                     modifier = Modifier.padding(horizontal = 20.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(CardTonalElevation)),
                     onClick = { isExpanded.value = !isExpanded.value },
-                    shape = if (isEnableLogcat) {
+                    shape = if (configResult != null) {
                         RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp, bottomEnd = 5.dp, bottomStart = 5.dp)
                     } else {
                         RoundedCornerShape(20.dp)
@@ -143,7 +141,7 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
                 }
 
                 // Logcat から取り出した PhysicalChannelConfig の情報
-                if (isEnableLogcat) {
+                if (configResult != null) {
                     Card(
                         modifier = Modifier
                             .padding(horizontal = 20.dp)
@@ -156,7 +154,7 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
                             modifier = Modifier
                                 .padding(20.dp)
                                 .fillMaxWidth(),
-                            result = logcatPhysicalChannelConfigResult.value!!,
+                            result = configResult,
                             isExpanded = isExpanded.value
                         )
                     }
