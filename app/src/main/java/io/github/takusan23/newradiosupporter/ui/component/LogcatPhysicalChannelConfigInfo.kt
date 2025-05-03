@@ -169,7 +169,7 @@ private fun CarrierAggregationInfo(
     primaryCell: BandData,
     secondaryCellList: List<BandData>
 ) {
-    val nameList = listOf("RAT", "バンド", "(NR|E)-ARFCN")
+    val nameList = listOf("RAT", "バンド", "NR-ARFCN")
 
     /** [BandData.isNR]なら 5G、そうじゃないなら 4G を返す */
     fun BandData.rat(): String = if (isNR) "5G" else "4G"
@@ -280,7 +280,8 @@ private fun Table(
                     modifier = Modifier.weight(1f),
                     text = text,
                     fontWeight = if (isBold) FontWeight.Bold else null,
-                    maxLines = 1
+                    maxLines = 1,
+                    softWrap = false
                 )
             }
         }
