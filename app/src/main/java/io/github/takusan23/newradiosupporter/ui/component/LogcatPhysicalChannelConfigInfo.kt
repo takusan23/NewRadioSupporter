@@ -1,53 +1,281 @@
 package io.github.takusan23.newradiosupporter.ui.component
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.LogcatPhysicalChannelConfigResult
 
+/** [LogcatPhysicalChannelConfigResult]を表示する */
 @Composable
 fun LogcatPhysicalChannelConfigInfo(
     modifier: Modifier = Modifier,
     result: LogcatPhysicalChannelConfigResult,
     isExpanded: Boolean
 ) {
-    Column(modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
 
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // 広げてない場合は Chips だけ
+        if (!isExpanded) {
+            NotExpandedInfo(result = result)
+            return
+        }
 
-            val primaryCell = when (result) {
-                is LogcatPhysicalChannelConfigResult.Endc -> result.primaryCell
-                is LogcatPhysicalChannelConfigResult.NrCa -> result.primaryCell
-            }
-            val secondaryCellList = when (result) {
-                is LogcatPhysicalChannelConfigResult.Endc -> listOf(result.secondaryCell)
-                is LogcatPhysicalChannelConfigResult.NrCa -> result.secondaryCellList
-            }
+        // タイトルと chips
+        Text(
+            text = when (result) {
+                is LogcatPhysicalChannelConfigResult.CarrierAggregation -> "(実験的) キャリアアグリゲーション情報"
+                is LogcatPhysicalChannelConfigResult.Endc -> "(実験的) アンカーバンド情報"
+            },
+            fontSize = 20.sp
+        )
+        NotExpandedInfo(result = result)
 
-            BandChip(
-                borderColor = MaterialTheme.colorScheme.primary,
-                band = primaryCell.band
+        when (result) {
+            // Endc の場合（アンカーバンド情報表示）
+            is LogcatPhysicalChannelConfigResult.Endc -> EndcInfo(
+                primaryCell = result.primaryCell
             )
-            secondaryCellList.forEach { cell ->
-                BandChip(
-                    borderColor = MaterialTheme.colorScheme.secondary,
-                    band = cell.band
-                )
-            }
+
+            // 4G/5G キャリアアグリゲーション表示
+            is LogcatPhysicalChannelConfigResult.CarrierAggregation -> CarrierAggregationInfo(
+                primaryCell = result.primaryCell,
+                secondaryCellList = result.secondaryCellList
+            )
         }
     }
 }
 
+/** 短縮表示 */
+@Composable
+private fun NotExpandedInfo(
+    modifier: Modifier = Modifier,
+    result: LogcatPhysicalChannelConfigResult
+) {
+    val primaryCell = when (result) {
+        is LogcatPhysicalChannelConfigResult.Endc -> result.primaryCell
+        is LogcatPhysicalChannelConfigResult.CarrierAggregation -> result.primaryCell
+    }
+    val secondaryCellList = when (result) {
+        is LogcatPhysicalChannelConfigResult.Endc -> listOf(result.secondaryCell)
+        is LogcatPhysicalChannelConfigResult.CarrierAggregation -> result.secondaryCellList
+    }
+
+    // 折り返せるように
+    FlowRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        BandChip(
+            borderColor = MaterialTheme.colorScheme.primary,
+            band = primaryCell.band
+        )
+
+        secondaryCellList.forEach { cell ->
+            BandChip(
+                borderColor = MaterialTheme.colorScheme.secondary,
+                band = cell.band
+            )
+        }
+    }
+}
+
+/** アンカーバンドを表示する */
+@Composable
+private fun EndcInfo(
+    modifier: Modifier = Modifier,
+    primaryCell: BandData
+) {
+    SectionBox(
+        modifier = modifier,
+        title = "アンカーバンド",
+        color = MaterialTheme.colorScheme.primary
+    ) {
+        // ひと回り小さく
+        BandItem(
+            modifier = Modifier.scale(0.9f),
+            bandData = primaryCell
+        )
+        // なにそれ説明
+        Surface(
+            color = Color.Transparent,
+            shape = RoundedCornerShape(10.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+        ) {
+            Text(
+                modifier = Modifier.padding(10.dp),
+                text = "NSA 方式の 5G は、単体では動けずアンカーとなる 4G が存在します。そのバンド情報です"
+            )
+        }
+    }
+}
+
+/** キャリアアグリゲーションを表示 */
+@Composable
+private fun CarrierAggregationInfo(
+    modifier: Modifier = Modifier,
+    primaryCell: BandData,
+    secondaryCellList: List<BandData>
+) {
+    val nameList = listOf("RAT", "バンド", "(NR|E)-ARFCN")
+
+    /** [BandData.isNR]なら 5G、そうじゃないなら 4G を返す */
+    fun BandData.rat(): String = if (isNR) "5G" else "4G"
+
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+
+        // プライマリーセル
+        SectionBox(
+            title = "プライマリーセル",
+            color = MaterialTheme.colorScheme.primary
+        ) {
+            Table(
+                nameList = nameList,
+                column = listOf(
+                    listOf(
+                        primaryCell.rat(),
+                        primaryCell.band,
+                        primaryCell.earfcn.toString()
+                    )
+                )
+            )
+        }
+
+        // セカンダリーセル
+        SectionBox(
+            title = "セカンダリーセル",
+            color = MaterialTheme.colorScheme.secondary
+        ) {
+            Table(
+                nameList = nameList,
+                column = secondaryCellList.map { secondary ->
+                    listOf(
+                        secondary.rat(),
+                        secondary.band,
+                        secondary.earfcn.toString()
+                    )
+                }
+            )
+        }
+    }
+}
+
+/** 縦棒を描画している */
+@Composable
+private fun SectionBox(
+    modifier: Modifier = Modifier,
+    title: String,
+    color: Color,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Row(
+        modifier = modifier.height(IntrinsicSize.Max), // content() の高さに合わせる
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+
+        // 縦棒
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .width(5.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+
+        // タイトルと content()
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                fontSize = 20.sp
+            )
+            Spacer(modifier = Modifier.height(5.dp))
+
+            content()
+        }
+    }
+}
+
+/**
+ * テーブル
+ *
+ * column は以下の形式
+ * [
+ *   ["5G", "n78", "643334"]
+ * ]
+ *
+ * @param nameList 名前
+ * @param column テーブルの中身
+ */
+@Composable
+private fun Table(
+    modifier: Modifier = Modifier,
+    nameList: List<String>,
+    column: List<List<String>>
+) {
+
+    @Composable
+    fun TableColumn(
+        modifier: Modifier = Modifier,
+        row: List<String>,
+        isBold: Boolean = false
+    ) {
+        Row(modifier = modifier) {
+            row.forEach { text ->
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = text,
+                    fontWeight = if (isBold) FontWeight.Bold else null
+                )
+            }
+        }
+    }
+
+    Column(modifier = modifier) {
+        // 名前
+        TableColumn(
+            row = nameList,
+            isBold = true
+        )
+        HorizontalDivider()
+
+        // データ
+        column.forEach { row -> TableColumn(row = row) }
+    }
+}
+
+/** バンド表示の Chips */
 @Composable
 private fun BandChip(
     modifier: Modifier = Modifier,
