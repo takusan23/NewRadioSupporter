@@ -36,8 +36,9 @@ import io.github.takusan23.newradiosupporter.ui.component.AboutMenuIcon
 import io.github.takusan23.newradiosupporter.ui.component.BackgroundNrPermissionDialog
 import io.github.takusan23.newradiosupporter.ui.component.BackgroundServiceItem
 import io.github.takusan23.newradiosupporter.ui.component.BandItem
-import io.github.takusan23.newradiosupporter.ui.component.NetworkStatusTitle
+import io.github.takusan23.newradiosupporter.ui.component.LogcatPermissionCard
 import io.github.takusan23.newradiosupporter.ui.component.LogcatPhysicalChannelConfigInfo
+import io.github.takusan23.newradiosupporter.ui.component.NetworkStatusTitle
 import io.github.takusan23.newradiosupporter.ui.component.OpenMobileNetworkSettingMenu
 import io.github.takusan23.newradiosupporter.ui.component.SimNetWorkStatusExpanded
 import io.github.takusan23.newradiosupporter.ui.component.SimNetworkOverview
@@ -161,6 +162,11 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
                 }
             }
 
+            item {
+                LogcatPermissionCard(
+                    modifier = Modifier.padding(top = 10.dp, start = 10.dp, end = 10.dp)
+                )
+            }
             item {
                 if (isUnlimitedNetwork.value != null) {
                     UnlimitedInfo(
