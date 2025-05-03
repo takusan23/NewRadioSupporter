@@ -29,7 +29,8 @@
     <string name="type_non_stand_alone_5g_short">NSA</string>
     <string name="type_stand_alone_5g_short">SA</string>
     <string name="type_4g_short">4G</string>
-    <string name="sim_network_overview_title">SIM</string>
+    <string name="sim_info_physical_sim">SIM</string>
+    <string name="sim_info_esim">eSIM</string>
     <string name="type_maybe_nr">もしかしたら5Gかもしれないです。（バンド等は取得できませんでした。）</string>
     <string name="frequency">周波数</string>
     <string name="type_lte_freq_nr">転用5Gに接続中です。通信速度は4Gと同等になります。</string>

@@ -28,7 +28,8 @@
     <string name="type_non_stand_alone_5g_short">NSA</string>
     <string name="type_stand_alone_5g_short">SA</string>
     <string name="type_4g_short">4G</string>
-    <string name="sim_network_overview_title">SIM</string>
+    <string name="sim_info_physical_sim">SIM</string>
+    <string name="sim_info_esim">eSIM</string>
     <string name="type_maybe_nr">It may be 5G. (I could not acquire the band etc.)</string>
     <string name="frequency">Frequency</string>
     <string name="type_lte_freq_nr">I\'m connecting to repurposed 5G. Communication speed will be equivalent to 4G.</string>

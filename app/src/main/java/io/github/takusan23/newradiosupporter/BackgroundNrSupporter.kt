@@ -14,15 +14,14 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
-import androidx.compose.ui.res.stringResource
 import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow
-import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
+import io.github.takusan23.newradiosupporter.tool.data.NetworkStatusData
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -70,8 +69,7 @@ class BackgroundNrSupporter : Service() {
                 .distinctUntilChanged()
                 .collect { statusDataList ->
                     statusDataList.forEachIndexed { index, statusData ->
-                        val (_, band, type, _) = statusData
-                        val notification = createNetworkStatusNotification(band, type)
+                        val notification = createNetworkStatusNotification(statusData)
 
                         if (ContextCompat.checkSelfPermission(this@BackgroundNrSupporter, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
                             notificationManagerCompat.notify(NOTIFICATION_ID + (index + 1), notification)
@@ -126,7 +124,9 @@ class BackgroundNrSupporter : Service() {
     }
 
     /** 通知を組み立てて、返す */
-    private fun createNetworkStatusNotification(bandData: BandData?, finalNRType: FinalNrType?): Notification {
+    private fun createNetworkStatusNotification(statusData: NetworkStatusData): Notification {
+        val (simInfo, bandData, finalNRType, _) = statusData
+
         // 通知チャンネルを作成する
         if (notificationManagerCompat.getNotificationChannel(NOTIFICATION_CHANNEL_ID) == null) {
             notificationManagerCompat.createNotificationChannel(
@@ -136,6 +136,7 @@ class BackgroundNrSupporter : Service() {
             )
         }
         return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID).apply {
+            // 本文
             val networkType = when (finalNRType) {
                 FinalNrType.NR_MMW -> getString(R.string.type_nr_mmwave)
                 FinalNrType.NR_SUB6 -> getString(R.string.type_nr_sub6)
@@ -143,13 +144,19 @@ class BackgroundNrSupporter : Service() {
                 FinalNrType.MAYBE_NR -> getString(R.string.type_maybe_nr)
                 FinalNrType.ANCHOR_BAND -> getString(R.string.type_lte_anchor_band)
                 FinalNrType.LTE -> getString(R.string.type_lte)
-                FinalNrType.ERROR, null -> getString(R.string.loading)
+                FinalNrType.ERROR -> getString(R.string.loading)
             }
-            val bandText = if (bandData != null) {
-                "${getString(R.string.connecting_band)}：${bandData.band} (${bandData.earfcn})"
-            } else getString(R.string.loading)
-            setContentTitle(bandData?.carrierName)
+            val bandText = "${getString(R.string.connecting_band)}：${bandData.band} (${bandData.earfcn})"
             setContentText("$networkType\n$bandText")
+
+            // タイトル
+            val notificationTitle = when (simInfo) {
+                is NetworkStatusData.SimInfo.Esim -> getString(R.string.sim_info_esim)
+                is NetworkStatusData.SimInfo.PhysicalSim -> "${getString(R.string.sim_info_physical_sim)} ${simInfo.simSlotIndex + 1}" // 0 始まりなので
+            }
+            setContentTitle("$notificationTitle - ${bandData.carrierName}")
+
+            // そのほか
             setSmallIcon(
                 when (finalNRType) {
                     FinalNrType.NR_MMW -> R.drawable.ic_android_nr_mmw
