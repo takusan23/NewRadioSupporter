@@ -102,29 +102,32 @@ private fun NotExpandedInfo(
         is LogcatPhysicalChannelConfigResult.CarrierAggregation -> result.secondaryCellList
     }
 
-    // 折り返せるように
-    FlowRow(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
+    Row(modifier = modifier) {
 
         Icon(
             modifier = Modifier.size(30.dp),
             painter = painterResource(R.drawable.android_new_radio_supporter_carrier_aggregation),
             contentDescription = null
         )
+        Spacer(modifier = Modifier.width(10.dp))
 
-        BandChip(
-            borderColor = MaterialTheme.colorScheme.primary,
-            band = primaryCell.band
-        )
+        // 折り返せるように
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
 
-        secondaryCellList.forEach { cell ->
             BandChip(
-                borderColor = MaterialTheme.colorScheme.secondary,
-                band = cell.band
+                borderColor = MaterialTheme.colorScheme.primary,
+                band = primaryCell.band
             )
+
+            secondaryCellList.forEach { cell ->
+                BandChip(
+                    borderColor = MaterialTheme.colorScheme.secondary,
+                    band = cell.band
+                )
+            }
         }
     }
 }
@@ -276,7 +279,8 @@ private fun Table(
                 Text(
                     modifier = Modifier.weight(1f),
                     text = text,
-                    fontWeight = if (isBold) FontWeight.Bold else null
+                    fontWeight = if (isBold) FontWeight.Bold else null,
+                    maxLines = 1
                 )
             }
         }
