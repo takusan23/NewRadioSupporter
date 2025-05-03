@@ -1,5 +1,9 @@
 package io.github.takusan23.newradiosupporter.ui.component
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.pm.PackageManager
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,22 +21,27 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.LogcatPhysicalChannelConfigResult
@@ -83,6 +92,34 @@ fun LogcatPhysicalChannelConfigInfo(
                 primaryCell = result.primaryCell,
                 secondaryCellList = result.secondaryCellList
             )
+        }
+    }
+}
+
+/** READ_LOGS 権限ください */
+@Composable
+fun LogcatPermissionCard(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val command = "adb shell pm grant io.github.takusan23.newradiosupporter android.permission.READ_LOGS"
+
+    // すでに権限付与済みなら return
+    val isGranted = remember { ContextCompat.checkSelfPermission(context, android.Manifest.permission.READ_LOGS) == PackageManager.PERMISSION_GRANTED }
+    if (isGranted) return
+
+    OutlinedCard(modifier = modifier) {
+        Column(modifier = Modifier.padding(10.dp)) {
+            Text(
+                text = """
+                    キャリアアグリゲーション情報を表示するためには、権限を付与する必要があります。
+                    この権限はパソコンを使って、以下の ADB コマンドを実行する必要があります。
+                    
+                    $command
+                """.trimIndent()
+            )
+            Button(onClick = {
+                val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipboardManager.setPrimaryClip(ClipData.newPlainText("command", command))
+            }) { Text(text = "コピーする") }
         }
     }
 }
