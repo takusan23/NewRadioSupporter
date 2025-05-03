@@ -157,7 +157,7 @@ object NetworkStatusFlow {
 
             // CellInfo の取得を行う
             // 接続中の NRARFCN とかを取得するために必要
-            val cellInfoList = waitRequestCellInfoUpdate(context, telephonyManager)
+            val cellInfoList = awaitRequestCellInfoUpdate(context, telephonyManager)
             // CellInfoNrを探して、もしない場合は 4G にする
             // Qualcomm Snapdragon 端末 と Google Tensor 端末 で挙動が違う
             // Google Tensor の場合は配列の最初に CellInfoNr があるみたい。
@@ -278,8 +278,8 @@ object NetworkStatusFlow {
     }
 
     /** [TelephonyManager.requestCellInfoUpdate]を叩く。更新しないと古いのが残ってしまうらしい。非同期なので終わるまで一時停止します */
-    @SuppressLint("MissingPermission")
-    private suspend fun waitRequestCellInfoUpdate(context: Context, telephonyManager: TelephonyManager) = suspendCoroutine<List<CellInfo>> { continuation ->
+    @SuppressLint("MissingPermission") // TODO [LogcatPhysicalChannelConfig]を本当にリリースすることになったら別のファイルに
+    suspend fun awaitRequestCellInfoUpdate(context: Context, telephonyManager: TelephonyManager) = suspendCoroutine<List<CellInfo>> { continuation ->
         telephonyManager.requestCellInfoUpdate(context.mainExecutor, object : TelephonyManager.CellInfoCallback() {
             override fun onCellInfo(cellInfo: MutableList<CellInfo>) {
                 continuation.resume(cellInfo)
@@ -298,9 +298,10 @@ object NetworkStatusFlow {
      * @param mnc 通信キャリアの MNC。[CellIdentityNr.getMncString]が null の場合はこちらが使われる。
      * @param cellInfo [TelephonyCallback.CellInfoListener]で取れるやつ
      * @param carrierName キャリア名。[TelephonyManager.getNetworkOperatorName]
+     * @param pci PCI
      * @return [BandData]。LTE/NR 以外はnullになります
      * */
-    private fun convertBandData(
+    fun convertBandData( // TODO [LogcatPhysicalChannelConfig]を本当にリリースすることになったら別のファイルに
         mcc: String,
         mnc: String,
         cellInfo: CellInfo,
@@ -315,6 +316,7 @@ object NetworkStatusFlow {
                 earfcn = earfcn,
                 frequencyMHz = BandDictionaryTool.toLteFrequencyMhz(earfcn),
                 carrierName = carrierName.ifEmpty { cellIdentity.operatorAlphaShort.toString() },
+                pci = cellIdentity.pci
             )
         }
         // 5G (NR)
@@ -342,6 +344,7 @@ object NetworkStatusFlow {
                 frequencyMHz = BandDictionaryTool.toNrFrequencyMhz(nrarfcn),
                 // キャリア名が空の場合は CellIdentity から取る
                 carrierName = carrierName.ifEmpty { cellIdentity.operatorAlphaShort.toString() },
+                pci = cellIdentity.pci
             )
         }
 
