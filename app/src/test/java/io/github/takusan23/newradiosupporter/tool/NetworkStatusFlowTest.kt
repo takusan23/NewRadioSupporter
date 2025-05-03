@@ -1,13 +1,25 @@
 package io.github.takusan23.newradiosupporter.tool
 
 import android.content.Context
-import android.telephony.*
+import android.telephony.CellIdentityLte
+import android.telephony.CellIdentityNr
+import android.telephony.CellInfo
+import android.telephony.CellInfoLte
+import android.telephony.CellInfoNr
+import android.telephony.CellSignalStrengthNr
+import android.telephony.PhoneStateListener
+import android.telephony.SignalStrength
+import android.telephony.SubscriptionInfo
+import android.telephony.SubscriptionManager
+import android.telephony.TelephonyCallback
+import android.telephony.TelephonyDisplayInfo
+import android.telephony.TelephonyManager
 import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
+import io.github.takusan23.newradiosupporter.tool.data.NetworkStatusData
 import io.github.takusan23.newradiosupporter.tool.data.NrStandAloneType
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
@@ -17,7 +29,6 @@ import org.junit.Test
 /**
  * [NetworkStatusFlow.collectMultipleNetworkStatus]のテスト
  */
-@OptIn(ExperimentalCoroutinesApi::class)
 class NetworkStatusFlowTest {
 
     @Before
@@ -474,10 +485,33 @@ class NetworkStatusFlowTest {
             every { createForSubscriptionId(eq(SIM_2_SUBSCRIPTION_ID)) }.returns(sim2TelephonyManager)
         }
 
+        // 1つ目は物理 SIM、2つ目は eSIM になるように
+        val sim1SubscriptionInfo = mockk<SubscriptionInfo>().apply {
+            every { simSlotIndex }.returns(0)
+            every { isEmbedded }.returns(false)
+        }
+        val sim2SubscriptionInfo = mockk<SubscriptionInfo>().apply {
+            every { simSlotIndex }.returns(1)
+            every { isEmbedded }.returns(true)
+        }
+        val mockSubscriptionManager = mockk<SubscriptionManager>().apply {
+            every { getActiveSubscriptionInfo(SIM_1_SUBSCRIPTION_ID) }.returns(sim1SubscriptionInfo)
+            every { getActiveSubscriptionInfo(SIM_2_SUBSCRIPTION_ID) }.returns(sim2SubscriptionInfo)
+            every { activeSubscriptionInfoList }.returns(listOf(SIM_1_SUBSCRIPTION_ID, SIM_2_SUBSCRIPTION_ID).map { subId ->
+                mockk<SubscriptionInfo>().apply {
+                    every { subscriptionId }.returns(subId)
+                }
+            })
+            every { addOnSubscriptionsChangedListener(any(), any()) }.answers { call ->
+                (call.invocation.args[1] as SubscriptionManager.OnSubscriptionsChangedListener).onSubscriptionsChanged()
+            }
+            every { removeOnSubscriptionsChangedListener(any()) }.returns(Unit)
+        }
+
         // Context#getSystemService をモック
         val context = mockk<Context>().apply {
             every { getSystemService(eq(Context.TELEPHONY_SERVICE)) }.returns(telephonyManager)
-            every { getSystemService(eq(Context.TELEPHONY_SUBSCRIPTION_SERVICE)) }.returns(createMockSubscriptionManager())
+            every { getSystemService(eq(Context.TELEPHONY_SUBSCRIPTION_SERVICE)) }.returns(mockSubscriptionManager)
             every { mainExecutor }.returns(mockk())
         }
 
@@ -487,8 +521,13 @@ class NetworkStatusFlowTest {
             secondSimNetworkStatusData
         ) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first { it.size == 2 }
 
+        // キャリア名
         Assert.assertEquals(firstSimNetworkStatusData.bandData.carrierName, SIM_1_CARRIER_NAME)
         Assert.assertEquals(secondSimNetworkStatusData.bandData.carrierName, SIM_2_CARRIER_NAME)
+
+        // SimInfo も
+        Assert.assertTrue(firstSimNetworkStatusData.simInfo is NetworkStatusData.SimInfo.PhysicalSim)
+        Assert.assertTrue(secondSimNetworkStatusData.simInfo is NetworkStatusData.SimInfo.Esim)
     }
 
     @Test
@@ -677,6 +716,7 @@ class NetworkStatusFlowTest {
         // モックしたものを返す
         every { getActiveSubscriptionInfo(any()) }.returns(mockk<SubscriptionInfo>().apply {
             every { simSlotIndex }.returns(0)
+            every { isEmbedded }.returns(false)
         })
         every { activeSubscriptionInfoList }.returns(listOf(SIM_1_SUBSCRIPTION_ID, SIM_2_SUBSCRIPTION_ID).map { subId ->
             mockk<SubscriptionInfo>().apply {
