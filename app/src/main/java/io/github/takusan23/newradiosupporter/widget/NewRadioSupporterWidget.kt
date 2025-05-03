@@ -215,20 +215,17 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                 .padding(5.dp)
         ) {
 
-            Row(modifier = GlanceModifier.fillMaxWidth()) {
-                Text(
-                    modifier = GlanceModifier.defaultWeight(),
-                    text = networkStatusData.bandData.carrierName,
-                    style = TextStyle(color = GlanceTheme.colors.primary)
-                )
-
-                val nrStandAloneTypeText = when (networkStatusData.nrStandAloneType) {
-                    NrStandAloneType.STAND_ALONE -> context.getString(R.string.type_stand_alone_5g_short)
-                    NrStandAloneType.NON_STAND_ALONE -> context.getString(R.string.type_non_stand_alone_5g_short)
-                    NrStandAloneType.ERROR -> context.getString(R.string.type_4g_short)
-                }
-                ChipText(text = "${networkStatusData.bandData.band} / $nrStandAloneTypeText")
+            val nrStandAloneTypeText = when (networkStatusData.nrStandAloneType) {
+                NrStandAloneType.STAND_ALONE -> context.getString(R.string.type_stand_alone_5g_short)
+                NrStandAloneType.NON_STAND_ALONE -> context.getString(R.string.type_non_stand_alone_5g_short)
+                NrStandAloneType.ERROR -> context.getString(R.string.type_4g_short)
             }
+            NetworkStatusCardTitle(
+                modifier = GlanceModifier.fillMaxWidth(),
+                simInfo = networkStatusData.simInfo,
+                carrierName = networkStatusData.bandData.carrierName,
+                chipText = "${networkStatusData.bandData.band} / $nrStandAloneTypeText"
+            )
 
             Spacer(modifier = GlanceModifier.height(5.dp))
 
@@ -299,15 +296,12 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                 .padding(5.dp),
         ) {
 
-            Row(modifier = GlanceModifier.fillMaxWidth()) {
-                Text(
-                    modifier = GlanceModifier.defaultWeight(),
-                    text = networkStatusData.bandData.carrierName,
-                    style = TextStyle(color = GlanceTheme.colors.primary)
-                )
-
-                ChipText(text = networkStatusData.bandData.band)
-            }
+            NetworkStatusCardTitle(
+                modifier = GlanceModifier.fillMaxWidth(),
+                simInfo = networkStatusData.simInfo,
+                carrierName = networkStatusData.bandData.carrierName,
+                chipText = networkStatusData.bandData.band
+            )
 
             NrStatusIcons(
                 modifier = GlanceModifier.padding(top = 5.dp),
@@ -406,6 +400,54 @@ class NewRadioSupporterWidget : GlanceAppWidget() {
                     textAlign = TextAlign.Center
                 )
             )
+        }
+    }
+
+    /**
+     * カード内のタイトル部分。キャリア名が出ているあれ
+     *
+     * @param modifier [GlanceModifier]
+     * @param simInfo 物理SIM or eSIM
+     * @param carrierName キャリア名
+     * @param chipText バンド表示してる部分
+     */
+    @Composable
+    private fun NetworkStatusCardTitle(
+        modifier: GlanceModifier = GlanceModifier,
+        simInfo: NetworkStatusData.SimInfo,
+        carrierName: String,
+        chipText: String
+    ) {
+        Row(
+            modifier = modifier,
+            verticalAlignment = Alignment.Vertical.CenterVertically
+        ) {
+
+            Image(
+                modifier = GlanceModifier.size(20.dp),
+                provider = ImageProvider(
+                    resId = when (simInfo) {
+                        is NetworkStatusData.SimInfo.Esim -> R.drawable.sim_card_download_24px
+                        is NetworkStatusData.SimInfo.PhysicalSim -> R.drawable.sim_card_24px
+                    }
+                ),
+                contentDescription = null,
+                colorFilter = ColorFilter.tint(GlanceTheme.colors.primary)
+            )
+
+            if (simInfo is NetworkStatusData.SimInfo.PhysicalSim) {
+                Text(
+                    text = "${simInfo.simSlotIndex + 1} - ",
+                    style = TextStyle(color = GlanceTheme.colors.primary)
+                )
+            }
+            Text(
+                modifier = GlanceModifier.defaultWeight(),
+                text = carrierName,
+                style = TextStyle(color = GlanceTheme.colors.primary)
+            )
+
+            ChipText(text = chipText)
         }
     }
 
