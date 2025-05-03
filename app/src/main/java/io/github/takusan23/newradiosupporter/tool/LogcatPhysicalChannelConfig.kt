@@ -62,8 +62,8 @@ object LogcatPhysicalChannelConfig {
         )
 
         // SIM カードの枚数分返すので
-        // カードスロットと LogcatPhysicalChannelConfigResult の Map
-        val resultSlotIndexAndConfigMap = hashMapOf<Int, LogcatPhysicalChannelConfigResult>()
+        // SubscriptionId と LogcatPhysicalChannelConfigResult の Map
+        val resultSubscriptionIdAndConfigMap = hashMapOf<Int, LogcatPhysicalChannelConfigResult>()
         NetworkStatusFlow.collectMultipleSimSubscriptionIdList(context).collectLatest { subscriptionIdList ->
             subscriptionIdList
                 .map { subscriptionId ->
@@ -138,9 +138,9 @@ object LogcatPhysicalChannelConfig {
 
                             // 更新して、Flow で送る
                             if (physicalChannelConfigResult != null) {
-                                resultSlotIndexAndConfigMap[simSlotIndex] = physicalChannelConfigResult
+                                resultSubscriptionIdAndConfigMap[subscriptionId] = physicalChannelConfigResult
                             }
-                            trySend(resultSlotIndexAndConfigMap)
+                            trySend(resultSubscriptionIdAndConfigMap)
                         }
                 }
                 .merge()
