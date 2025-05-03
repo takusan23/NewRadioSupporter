@@ -62,7 +62,7 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
     val multipleNetworkStatusDataList = NetworkStatusFlow.collectMultipleNetworkStatus(context).collectAsStateWithLifecycle(initialValue = emptyList())
 
     // Logcat から PhysicalChannelConfig を取得する
-    val configResultList = LogcatPhysicalChannelConfig.listenLogcatPhysicalChannelConfig(context = context).collectAsStateWithLifecycle(initialValue = null)
+    val configResultList = LogcatPhysicalChannelConfig.listenLogcatPhysicalChannelConfig(context = context).collectAsStateWithLifecycle(emptyMap())
 
     // バックグラウンドの権限ダイアログを出すか
     val isOpenBackgroundPermissionDialog = remember { mutableStateOf(false) }
@@ -96,7 +96,7 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
                 // 初期値はデータ通信に設定されたSIMカード
                 val isExpanded = remember { mutableStateOf(status.simInfo.subscriptionId == NetworkStatusFlow.getDataUsageSubscriptionId()) }
                 // 狙った SIM カードの LogcatPhysicalChannelConfigResult があるか
-                val configResult = configResultList.value?.get(status.simInfo.subscriptionId)
+                val configResult = configResultList.value[status.simInfo.subscriptionId]
 
                 // 見出し
                 NetworkStatusTitle(
