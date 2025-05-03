@@ -126,8 +126,8 @@ object LogcatPhysicalChannelConfig {
                                     secondaryCellList = secondaryCellList
                                 )
 
-                                // セカンダリーセルが一つあれば Endc
-                                secondaryCellList.isNotEmpty() -> LogcatPhysicalChannelConfigResult.Endc(
+                                // プライマリーセルが 4G で、セカンダリーセルで 5G があれば Endc
+                                !primaryCell.isNR && secondaryCellList.any { it.isNR } -> LogcatPhysicalChannelConfigResult.Endc(
                                     primaryCell = primaryCell,
                                     secondaryCell = secondaryCellList.first()
                                 )
