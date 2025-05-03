@@ -6,6 +6,8 @@ sealed interface LogcatPhysicalChannelConfigResult {
     /**
      * プライマリーセル、セカンダリーセルの EN-DC 情報
      * アンカーバンドとなっている 4G の情報を取得できます
+     *
+     * セカンダリーセル一つの場合はこちらを返します
      */
     data class Endc(
         val primaryCell: BandData,
@@ -13,10 +15,10 @@ sealed interface LogcatPhysicalChannelConfigResult {
     ) : LogcatPhysicalChannelConfigResult
 
     /**
-     * 5G のキャリアアグリゲーション
-     * [Endc]と違い、5G が2つ以上あった場合はこちらが返されます
+     * 4G/5G のキャリアアグリゲーション
+     * [Endc]と違い、セカンダリーセルが2つ以上あった場合はこちらが返されます
      */
-    data class NrCa(
+    data class CarrierAggregation(
         val primaryCell: BandData,
         val secondaryCellList: List<BandData>
     ) : LogcatPhysicalChannelConfigResult

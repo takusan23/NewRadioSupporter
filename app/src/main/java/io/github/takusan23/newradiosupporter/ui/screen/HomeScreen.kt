@@ -1,5 +1,6 @@
 package io.github.takusan23.newradiosupporter.ui.screen
 
+import android.telephony.SubscriptionManager
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -62,7 +63,9 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
     val multipleNetworkStatusDataList = NetworkStatusFlow.collectMultipleNetworkStatus(context).collectAsStateWithLifecycle(initialValue = emptyList())
 
     // Logcat から PhysicalChannelConfig を取得する
-    val logcatPhysicalChannelConfigResult = LogcatPhysicalChannelConfig.listenLogcatPhysicalChannelConfig().collectAsStateWithLifecycle(initialValue = null)
+    val logcatPhysicalChannelConfigResult = remember {
+        LogcatPhysicalChannelConfig.listenLogcatPhysicalChannelConfig(context = context, subscriptionId = SubscriptionManager.getActiveDataSubscriptionId())
+    }.collectAsStateWithLifecycle(initialValue = null)
     val isEnableLogcat = logcatPhysicalChannelConfigResult.value != null
 
     // バックグラウンドの権限ダイアログを出すか
@@ -147,11 +150,7 @@ fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
                             .padding(top = 5.dp),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceColorAtElevation(CardTonalElevation)),
                         onClick = { isExpanded.value = !isExpanded.value },
-                        shape = if (isEnableLogcat) {
-                            RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
-                        } else {
-                            RoundedCornerShape(20.dp)
-                        }
+                        shape = RoundedCornerShape(topStart = 5.dp, topEnd = 5.dp, bottomStart = 20.dp, bottomEnd = 20.dp)
                     ) {
                         LogcatPhysicalChannelConfigInfo(
                             modifier = Modifier
