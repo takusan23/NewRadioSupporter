@@ -122,9 +122,13 @@ object NetworkStatusFlow {
             .createForSubscriptionId(subscriptionId)
         val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
 
-        // SIMカードのスロット番号
-        // 一部の端末で null になるっぽい？
-        val simSlotIndex = subscriptionManager.getActiveSubscriptionInfo(subscriptionId)?.simSlotIndex ?: 0
+        // SIM カード情報
+        val subscriptionInfo = subscriptionManager.getActiveSubscriptionInfo(subscriptionId)
+        val simInfo = when {
+            subscriptionInfo.isEmbedded -> NetworkStatusData.SimInfo.Esim(subscriptionId)
+            // 一部の端末で null になるっぽい？
+            else -> NetworkStatusData.SimInfo.PhysicalSim(subscriptionId, simSlotIndex = subscriptionInfo.simSlotIndex ?: 0)
+        }
         // キャリア名
         val carrierName = telephonyManager.networkOperatorName
         // 通信キャリアの MCC / MNC を取得する
@@ -184,7 +188,7 @@ object NetworkStatusFlow {
                 else -> FinalNrType.NR_SUB6
             }
 
-            NetworkStatusData(simSlotIndex, bandData, nrType, nrStandAloneType)
+            NetworkStatusData(simInfo, bandData, nrType, nrStandAloneType)
         }.onFailure {
             // runCatching 内での失敗を出力
             it.printStackTrace()

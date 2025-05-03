@@ -8,12 +8,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
@@ -22,10 +20,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.takusan23.newradiosupporter.BackgroundNrSupporter
 import io.github.takusan23.newradiosupporter.R
@@ -37,6 +33,7 @@ import io.github.takusan23.newradiosupporter.ui.component.AboutMenuIcon
 import io.github.takusan23.newradiosupporter.ui.component.BackgroundNrPermissionDialog
 import io.github.takusan23.newradiosupporter.ui.component.BackgroundServiceItem
 import io.github.takusan23.newradiosupporter.ui.component.BandItem
+import io.github.takusan23.newradiosupporter.ui.component.NetworkStatusTitle
 import io.github.takusan23.newradiosupporter.ui.component.OpenMobileNetworkSettingMenu
 import io.github.takusan23.newradiosupporter.ui.component.SimNetWorkStatusExpanded
 import io.github.takusan23.newradiosupporter.ui.component.SimNetworkOverview
@@ -90,22 +87,15 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
 
                 // 押したら展開できるようにするため
                 // 初期値はデータ通信に設定されたSIMカードのスロット番号
-                val isExpanded = remember { mutableStateOf(status.simSlotIndex == NetworkStatusFlow.getDataUsageSimSlotIndex(context)) }
+                val isExpanded = remember { mutableStateOf(status.simInfo.subscriptionId == NetworkStatusFlow.getDataUsageSimSlotIndex(context)) }
 
-                TextButton(
-                    modifier = Modifier.padding(horizontal = 20.dp),
-                    onClick = { isExpanded.value = !isExpanded.value }
-                ) {
-                    Text(
-                        modifier = Modifier.weight(1f),
-                        text = "${stringResource(id = R.string.sim_network_overview_title)} ${status.simSlotIndex + 1} - ${status.bandData.carrierName}",
-                        fontSize = 16.sp
-                    )
-                    Icon(
-                        painter = painterResource(id = if (isExpanded.value) R.drawable.ic_expand_less_24 else R.drawable.ic_expand_more_24),
-                        contentDescription = null
-                    )
-                }
+                // 見出し
+                NetworkStatusTitle(
+                    simInfo = status.simInfo,
+                    carrierName = status.bandData.carrierName,
+                    isExpanded = isExpanded.value,
+                    onClick = { isExpanded.value = it }
+                )
 
                 Card(
                     modifier = Modifier.padding(horizontal = 20.dp),
