@@ -13,21 +13,27 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.LogcatPhysicalChannelConfigResult
 
@@ -50,13 +56,20 @@ fun LogcatPhysicalChannelConfigInfo(
         }
 
         // タイトルと chips
-        Text(
-            text = when (result) {
-                is LogcatPhysicalChannelConfigResult.CarrierAggregation -> "(実験的) キャリアアグリゲーション情報"
-                is LogcatPhysicalChannelConfigResult.Endc -> "(実験的) アンカーバンド情報"
-            },
-            fontSize = 20.sp
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                painter = painterResource(R.drawable.experiment_24px),
+                contentDescription = null
+            )
+            Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
+            Text(
+                text = when (result) {
+                    is LogcatPhysicalChannelConfigResult.CarrierAggregation -> "(実験的) キャリアアグリゲーション情報"
+                    is LogcatPhysicalChannelConfigResult.Endc -> "(実験的) アンカーバンド情報"
+                },
+                fontSize = 20.sp
+            )
+        }
         NotExpandedInfo(result = result)
 
         when (result) {
@@ -95,6 +108,13 @@ private fun NotExpandedInfo(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+
+        Icon(
+            modifier = Modifier.size(30.dp),
+            painter = painterResource(R.drawable.android_new_radio_supporter_carrier_aggregation),
+            contentDescription = null
+        )
+
         BandChip(
             borderColor = MaterialTheme.colorScheme.primary,
             band = primaryCell.band
