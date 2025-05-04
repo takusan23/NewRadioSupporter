@@ -111,7 +111,16 @@ fun LogcatPermissionCard(modifier: Modifier = Modifier) {
             Text(
                 text = """
                     キャリアアグリゲーション情報を表示するためには、権限を付与する必要があります。
+                    ただし、端末によっては権限を付与しても正しく表示されない場合があります。
+
+                    権限を利用して収集したデータは、キャリアアグリゲーション、アンカーバンド表示のために利用され、それ以外の目的では利用しません。
+                    表示のための処理は、端末内で処理が完結します。外部へ送信されることはありません。
+                    
                     この権限はパソコンを使って、以下の ADB コマンドを実行する必要があります。
+                    またアプリ起動時に表示される、デバイスログへのアクセスを許可してください。                    
+                    
+                    なんだかよくわからないという場合や、不安な場合は、何もしないでください。
+                    初回起動時に要求した権限で Sub6/mmWave/転用5G や NSA/SA 判定は利用可能です。                    
                     
                     $command
                 """.trimIndent()
@@ -119,7 +128,7 @@ fun LogcatPermissionCard(modifier: Modifier = Modifier) {
             Button(onClick = {
                 val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                 clipboardManager.setPrimaryClip(ClipData.newPlainText("command", command))
-            }) { Text(text = "コピーする") }
+            }) { Text(text = "コマンドをコピーする") }
         }
     }
 }
