@@ -87,19 +87,18 @@ object NetworkStatusFlow {
     }
 
     /**
-     * データ通信に設定されたSIMカードのスロット番号を取得する。
+     * データ通信に設定された SIM カードの SubscriptionId を取得する
      *
-     * @return データ通信に利用しているSIM。選択されていない場合は null を返す
+     * @return データ通信に利用している SubscriptionId。選択されていない場合は null を返す
      */
     @SuppressLint("MissingPermission")
-    fun getDataUsageSimSlotIndex(context: Context): Int? {
+    fun getDataUsageSubscriptionId(): Int? {
         val dataUsageSubscriptionId = SubscriptionManager.getActiveDataSubscriptionId()
         // 選択されていない場合
         if (dataUsageSubscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
             return null
         }
-        val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
-        return subscriptionManager.getActiveSubscriptionInfo(dataUsageSubscriptionId)?.simSlotIndex
+        return dataUsageSubscriptionId
     }
 
     /**
@@ -123,11 +122,11 @@ object NetworkStatusFlow {
         val subscriptionManager = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as SubscriptionManager
 
         // SIM カード情報
-        val subscriptionInfo = subscriptionManager.getActiveSubscriptionInfo(subscriptionId)
+        // 一部の端末で null になるっぽい？
+        val subscriptionInfo: SubscriptionInfo? = subscriptionManager.getActiveSubscriptionInfo(subscriptionId)
         val simInfo = when {
-            subscriptionInfo.isEmbedded -> NetworkStatusData.SimInfo.Esim(subscriptionId)
-            // 一部の端末で null になるっぽい？
-            else -> NetworkStatusData.SimInfo.PhysicalSim(subscriptionId, simSlotIndex = subscriptionInfo.simSlotIndex ?: 0)
+            subscriptionInfo?.isEmbedded == true -> NetworkStatusData.SimInfo.Esim(subscriptionId)
+            else -> NetworkStatusData.SimInfo.PhysicalSim(subscriptionId, simSlotIndex = subscriptionInfo?.simSlotIndex ?: 0)
         }
         // キャリア名
         val carrierName = telephonyManager.networkOperatorName

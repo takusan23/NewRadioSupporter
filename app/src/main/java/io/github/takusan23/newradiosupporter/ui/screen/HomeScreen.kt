@@ -86,8 +86,8 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
             items(multipleNetworkStatusDataList.value) { status ->
 
                 // 押したら展開できるようにするため
-                // 初期値はデータ通信に設定されたSIMカードのスロット番号
-                val isExpanded = remember { mutableStateOf(status.simInfo.subscriptionId == NetworkStatusFlow.getDataUsageSimSlotIndex(context)) }
+                // 初期値はデータ通信に設定されたSIMカード
+                val isExpanded = remember { mutableStateOf(status.simInfo.subscriptionId == NetworkStatusFlow.getDataUsageSubscriptionId()) }
 
                 // 見出し
                 NetworkStatusTitle(
