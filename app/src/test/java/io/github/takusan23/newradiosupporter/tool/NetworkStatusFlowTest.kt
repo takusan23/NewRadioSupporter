@@ -71,6 +71,7 @@ class NetworkStatusFlowTest {
                                 every { mccString }.returns(null)
                                 every { mncString }.returns(null)
                                 every { bands }.returns(intArrayOf())
+                                every { pci }.returns(1)
                             })
                         },
                         // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
@@ -128,6 +129,7 @@ class NetworkStatusFlowTest {
                                 every { mccString }.returns(null)
                                 every { mncString }.returns(null)
                                 every { bands }.returns(intArrayOf())
+                                every { pci }.returns(1)
                             })
                         },
                         // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
@@ -185,6 +187,7 @@ class NetworkStatusFlowTest {
                                 every { mccString }.returns(null)
                                 every { mncString }.returns(null)
                                 every { bands }.returns(intArrayOf())
+                                every { pci }.returns(1)
                             })
                         },
                         // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
@@ -243,6 +246,7 @@ class NetworkStatusFlowTest {
                             every { cellIdentity }.returns(mockk<CellIdentityLte>().apply {
                                 every { earfcn }.returns(1500)
                                 every { operatorAlphaShort }.returns("docomo")
+                                every { pci }.returns(1)
                             })
                         }
                     )
@@ -296,6 +300,7 @@ class NetworkStatusFlowTest {
                             every { cellIdentity }.returns(mockk<CellIdentityLte>().apply {
                                 every { earfcn }.returns(1500)
                                 every { operatorAlphaShort }.returns("docomo")
+                                every { pci }.returns(1)
                             })
                         }
                     )
@@ -352,6 +357,7 @@ class NetworkStatusFlowTest {
                                 every { mccString }.returns(null)
                                 every { mncString }.returns(null)
                                 every { bands }.returns(intArrayOf())
+                                every { pci }.returns(1)
                             })
                         },
                         // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
@@ -411,6 +417,7 @@ class NetworkStatusFlowTest {
                                 every { mccString }.returns(null)
                                 every { mncString }.returns(null)
                                 every { bands }.returns(intArrayOf())
+                                every { pci }.returns(1)
                             })
                         },
                         // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
@@ -472,6 +479,7 @@ class NetworkStatusFlowTest {
                                     every { mccString }.returns(null)
                                     every { mncString }.returns(null)
                                     every { bands }.returns(intArrayOf())
+                                    every { pci }.returns(1)
                                 })
                             }
                         )
@@ -581,6 +589,7 @@ class NetworkStatusFlowTest {
                                         every { mccString }.returns(mcc)
                                         every { mncString }.returns(mnc)
                                         every { bands }.returns(intArrayOf())
+                                        every { pci }.returns(1)
                                     })
                                 },
                                 // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
@@ -700,6 +709,7 @@ class NetworkStatusFlowTest {
                             every { cellIdentity }.returns(mockk<CellIdentityLte>().apply {
                                 every { earfcn }.returns(1500)
                                 every { operatorAlphaShort }.returns("docomo")
+                                every { pci }.returns(1)
                             })
                         }
                     )
@@ -751,6 +761,7 @@ class NetworkStatusFlowTest {
                             every { cellIdentity }.returns(mockk<CellIdentityLte>().apply {
                                 every { earfcn }.returns(1500)
                                 every { operatorAlphaShort }.returns("docomo")
+                                every { pci }.returns(1)
                             })
                         }
                     )
