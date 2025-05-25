@@ -165,12 +165,14 @@ private fun NotExpandedInfo(
 
             BandChip(
                 borderColor = MaterialTheme.colorScheme.primary,
+                isNr = primaryCell.isNR,
                 band = primaryCell.band
             )
 
             secondaryCellList.forEach { cell ->
                 BandChip(
                     borderColor = MaterialTheme.colorScheme.secondary,
+                    isNr = primaryCell.isNR,
                     band = cell.band
                 )
             }
@@ -351,6 +353,7 @@ private fun Table(
 private fun BandChip(
     modifier: Modifier = Modifier,
     borderColor: Color,
+    isNr: Boolean,
     band: String
 ) {
     Surface(
@@ -362,7 +365,7 @@ private fun BandChip(
     ) {
         Text(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
-            text = band
+            text = if (isNr) "n$band" else "b$band"
         )
     }
 }
