@@ -127,9 +127,10 @@ object LogcatPhysicalChannelConfig {
                                 )
 
                                 // プライマリーセルが 4G で、セカンダリーセルで 5G があれば Endc
+                                // セカンダリーセルの情報は、getCellInfo() を優先する。null かもしれないので
                                 !primaryCell.isNR && secondaryCellList.any { it.isNR } -> LogcatPhysicalChannelConfigResult.Endc(
                                     primaryCell = primaryCell,
-                                    secondaryCell = secondaryCellList.first()
+                                    secondaryCell = bandList.firstOrNull { it.isNR } ?: secondaryCellList.first()
                                 )
 
                                 // ない
