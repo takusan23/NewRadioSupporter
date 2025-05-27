@@ -99,7 +99,11 @@ object LogcatPhysicalChannelConfig {
                                     it.pci == mPhysicalCellId?.toIntOrNull()
                                 } ?: BandData(
                                     isNR = mNetworkType == "NR",
-                                    band = mBand ?: return null,
+                                    band = when {
+                                        mBand == null -> return null
+                                        mNetworkType == "NR" -> "n$mBand"
+                                        else -> mBand
+                                    },
                                     earfcn = mDownlinkChannelNumber?.toIntOrNull() ?: return null,
                                     carrierName = "",
                                     frequencyMHz = mDownlinkFrequency?.toFloat() ?: return null,
