@@ -7,6 +7,7 @@ import android.telephony.TelephonyManager
 import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.LogcatPhysicalChannelConfigResult
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -14,10 +15,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.yield
 import java.io.InputStreamReader
@@ -63,10 +61,10 @@ object LogcatPhysicalChannelConfig {
 
         // SIM カードの枚数分返すので
         // SubscriptionId と LogcatPhysicalChannelConfigResult の Map
-        val resultSubscriptionIdAndConfigMap = hashMapOf<Int, LogcatPhysicalChannelConfigResult>()
+        var resultSubscriptionIdAndConfigMap = emptyMap<Int, LogcatPhysicalChannelConfigResult>()
         NetworkStatusFlow.collectMultipleSimSubscriptionIdList(context).collectLatest { subscriptionIdList ->
-            subscriptionIdList
-                .map { subscriptionId ->
+            coroutineScope {
+                subscriptionIdList.forEach { subscriptionId ->
                     // phoneId は SIM スロット番号っぽいので、SubscriptionManager から問い合わせる
                     val simSlotIndex = subscriptionManager.getActiveSubscriptionInfo(subscriptionId).simSlotIndex
                     // SIM カードスロットに対応した TelephonyManager を作る
@@ -77,7 +75,7 @@ object LogcatPhysicalChannelConfig {
                     logcatPhysicalChannelConfigFlow
                         .filterNotNull()
                         .filter { (updateLog, _) -> updateLog.phoneId == simSlotIndex }
-                        .onEach { (_, configs) ->
+                        .collectLatest { (_, configs) ->
 
                             // バンドを取得できない端末がある
                             // が、代わりに PCI が取れているので、 getCellInfo() の中に PCI があれば、それを使う
@@ -142,14 +140,14 @@ object LogcatPhysicalChannelConfig {
                             }
 
                             // 更新して、Flow で送る
+                            // 参照が変化しないと Compose が recomposition をトリガーしないので
                             if (physicalChannelConfigResult != null) {
-                                resultSubscriptionIdAndConfigMap[subscriptionId] = physicalChannelConfigResult
+                                resultSubscriptionIdAndConfigMap = resultSubscriptionIdAndConfigMap + (subscriptionId to physicalChannelConfigResult)
                             }
                             trySend(resultSubscriptionIdAndConfigMap)
                         }
                 }
-                .merge()
-                .launchIn(this)
+            }
         }
     }.filter { it.isNotEmpty() }
 
@@ -201,10 +199,16 @@ object LogcatPhysicalChannelConfig {
                 var output: String? = null
                 while (bufferedReader.readLine()?.also { output = it } != null) {
                     yield()
-                    val data = output?.split(" ")?.let {
-                        LogCatData(it[0], it[1], it.drop(6).joinToString(separator = " "))
-                    } ?: continue
-                    emit(data)
+                    try {
+                        val data = output?.split(" ")?.let {
+                            LogCatData(it[0], it[1], it.drop(6).joinToString(separator = " "))
+                        } ?: continue
+                        emit(data)
+                    } catch (e: Exception) {
+                        // MediaTek 製デバイスの logcat で ImsPhoneStateListener: [0] のログが文字化けを起こす？
+                        // split() が動かなくなるため例外が投げられる
+                        // do nothing
+                    }
                 }
             }
         } finally {
