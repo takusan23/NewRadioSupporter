@@ -6,7 +6,20 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.os.Build
-import android.telephony.*
+import android.telephony.CellIdentityLte
+import android.telephony.CellIdentityNr
+import android.telephony.CellInfo
+import android.telephony.CellInfoNr
+import android.telephony.CellSignalStrengthNr
+import android.telephony.PhoneStateListener
+import android.telephony.SignalStrength
+import android.telephony.SubscriptionInfo
+import android.telephony.SubscriptionManager
+import android.telephony.TelephonyCallback
+import android.telephony.TelephonyDisplayInfo
+import android.telephony.TelephonyManager
+import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow.collectMultipleSimSubscriptionIdList
+import io.github.takusan23.newradiosupporter.tool.NetworkStatusFlow.collectNetworkStatus
 import io.github.takusan23.newradiosupporter.tool.data.BandData
 import io.github.takusan23.newradiosupporter.tool.data.FinalNrType
 import io.github.takusan23.newradiosupporter.tool.data.NetworkStatusData
@@ -324,7 +337,21 @@ object NetworkStatusFlow {
             // NR の場合は同じような表を用意しても、複数の結果になる場合がある（n78はn77を内包のような）
             // なので、まずはシステムから帰ってきた値を優先的に利用し、取得できなかった場合のみ表から探すようにする
             // が、多分モデムのベンダーはこれを実装していないため、おそらく表から探すハメになる
-            val modemOrFallbackNrBand = cellIdentity.bands.firstOrNull()?.let { "n$it" } ?: BandDictionaryTool.toNrBand(nrarfcn)
+            // ---
+            // が、MediaTek の場合はモデムから返ってきた値を極力無視する。
+            // NR-ARFCN に関係なく bands が常に [1] の場合があり、全く当てにならない。
+            // なので、NR-ARFCN に近しいバンドの場合はそれを採用し、当てにならない場合は近そうなものを採用する
+            val modemOrFallbackNrBand = cellIdentity.bands.firstOrNull()
+                ?.let { "n$it" }
+                ?.let { bandNumber ->
+                    if (bandNumber in BandDictionaryTool.toNrBandList(nrarfcn)) {
+                        bandNumber
+                    } else {
+                        // ?: に流れるように
+                        null
+                    }
+                }
+                ?: BandDictionaryTool.toNrBand(nrarfcn)
 
             // 日本だけですが、通信キャリアが使っていない 5G バンドが返ってきたら修正を試みます。
             // MCC MNC は null の可能性があるので引数からも取る

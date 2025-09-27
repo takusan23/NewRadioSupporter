@@ -609,6 +609,67 @@ class NetworkStatusFlowTest {
     }
 
     @Test
+    fun collectMultipleNetworkStatus_MediaTekのようにbandsとnrarfcnが違う値を返しても近いバンドを出す() = runTest {
+        // Android 12 以上で
+        mockkObject(NetworkStatusFlow)
+        every { NetworkStatusFlow.getProperty("isAndroidSAndLater") }.returns(true)
+
+        // UnitTest で使えない Android の関数を全部モックしていく
+        val telephonyManager = mockk<TelephonyManager>().apply {
+            every { networkOperatorName }.returns("docomo")
+            every { dataNetworkType }.returns(TelephonyManager.NETWORK_TYPE_NR)
+            every { networkOperator }.returns("44010")
+            every { createForSubscriptionId(any()) }.returns(this)
+            every { unregisterTelephonyCallback(any()) }.returns(Unit)
+            every { signalStrength }.returns(mockk<SignalStrength>().apply {
+                every { getCellSignalStrengths<CellSignalStrengthNr>(any()) }.returns(listOf(mockk()))
+            })
+            // コールバックを呼び出して挙動を再現する
+            every { registerTelephonyCallback(any(), any()) }.answers { call ->
+                (call.invocation.args[1] as TelephonyCallback.DisplayInfoListener).onDisplayInfoChanged(mockk<TelephonyDisplayInfo>().apply {
+                    every { overrideNetworkType }.returns(TelephonyDisplayInfo.OVERRIDE_NETWORK_TYPE_NR_ADVANCED)
+                })
+            }
+            // モックした CellInfo を返す
+            // MediaTek は bands が NR-ARFCN によらず [1] になることがある
+            every { requestCellInfoUpdate(any(), any()) }.answers { call ->
+                (call.invocation.args[1] as TelephonyManager.CellInfoCallback).onCellInfo(
+                    listOf(
+                        mockk<CellInfoNr>().apply {
+                            every { cellIdentity }.returns(mockk<CellIdentityNr>().apply {
+                                every { nrarfcn }.returns(703392) // n79 になるはず
+                                every { operatorAlphaShort }.returns("docomo")
+                                // null なら networkOperator から取る
+                                every { mccString }.returns(null)
+                                every { mncString }.returns(null)
+                                every { bands }.returns(intArrayOf(1)) // 無視されてほしい
+                                every { pci }.returns(1)
+                            })
+                        },
+                        // Qualcomm Snapdragon だと CellInfoNr 以外に CellInfoLte が入ってたりするので
+                        mockk<CellInfoLte>()
+                    )
+                )
+            }
+        }
+
+        // Context#getSystemService をモック
+        val context = mockk<Context>().apply {
+            every { getSystemService(eq(Context.TELEPHONY_SERVICE)) }.returns(telephonyManager)
+            every { getSystemService(eq(Context.TELEPHONY_SUBSCRIPTION_SERVICE)) }.returns(createMockSubscriptionManager())
+            every { mainExecutor }.returns(mockk())
+        }
+
+        val (firstSimNetworkStatusData, _) = NetworkStatusFlow.collectMultipleNetworkStatus(context).first()
+        Assert.assertEquals(firstSimNetworkStatusData.finalNRType, FinalNrType.NR_SUB6)
+        Assert.assertEquals(firstSimNetworkStatusData.nrStandAloneType, NrStandAloneType.STAND_ALONE)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.isNR, true)
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.band, "n79")
+        Assert.assertEquals(firstSimNetworkStatusData.bandData.earfcn, 703392)
+    }
+
+
+    @Test
     fun collectMultipleNetworkStatus_アンカーバンドが検出できる_Android11以下() = runTest {
         // Android 11 以下で
         mockkObject(NetworkStatusFlow)

@@ -1,5 +1,8 @@
 package io.github.takusan23.newradiosupporter.tool
 
+import io.github.takusan23.newradiosupporter.tool.BandDictionaryTool.SUB6_MIN_FREQUENCY_WITHOUT_LTE_FREQUENCY_MHZ
+import io.github.takusan23.newradiosupporter.tool.BandDictionaryTool.toNrBand
+import io.github.takusan23.newradiosupporter.tool.BandDictionaryTool.tryFixNrBand
 import io.github.takusan23.newradiosupporter.tool.data.BandDictionaryData
 
 /** EARFCN(4G/LTE)と、NR-ARFCN(5G/NR)からバンドを出す */
