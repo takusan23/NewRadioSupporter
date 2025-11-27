@@ -12,8 +12,8 @@ android {
         applicationId = "io.github.takusan23.newradiosupporter"
         minSdk = 30
         targetSdk = 37
-        versionCode = 21
-        versionName = "5.0.0 Beta 5"
+        versionCode = 23
+        versionName = "5.0.0 Beta 6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
