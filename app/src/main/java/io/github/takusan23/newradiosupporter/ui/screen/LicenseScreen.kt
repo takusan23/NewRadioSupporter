@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.dropUnlessResumed
 import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.ui.WindowInsetsTool
 import io.github.takusan23.newradiosupporter.ui.component.BackIcon
@@ -37,7 +38,7 @@ fun LicenseScreen(onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(id = R.string.license)) },
-                navigationIcon = { BackIcon(onClick = onBack) }
+                navigationIcon = { BackIcon(onClick = dropUnlessResumed(block = onBack)) }
             )
         },
         contentWindowInsets = WindowInsetsTool.ScaffoldWindowInsets

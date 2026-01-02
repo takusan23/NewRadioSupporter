@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.dropUnlessResumed
 import io.github.takusan23.newradiosupporter.R
 import io.github.takusan23.newradiosupporter.ui.WindowInsetsTool
 import io.github.takusan23.newradiosupporter.ui.component.BackIcon
@@ -44,7 +45,7 @@ fun SettingScreen(
         topBar = {
             TopAppBar(
                 title = { Text(text = stringResource(id = R.string.setting)) },
-                navigationIcon = { BackIcon(onClick = onBack) }
+                navigationIcon = { BackIcon(onClick = dropUnlessResumed(block = onBack)) }
             )
         },
         contentWindowInsets = WindowInsetsTool.ScaffoldWindowInsets
