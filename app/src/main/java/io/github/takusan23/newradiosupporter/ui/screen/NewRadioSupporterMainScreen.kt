@@ -2,9 +2,9 @@ package io.github.takusan23.newradiosupporter.ui.screen
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
 import io.github.takusan23.newradiosupporter.tool.PermissionCheckTool
 import io.github.takusan23.newradiosupporter.ui.theme.NewRadioSupporterTheme
 
@@ -16,32 +16,38 @@ fun NewRadioSupporterMainScreen() {
     NewRadioSupporterTheme {
         val context = LocalContext.current
         // ナビゲーション
-        val navController = rememberNavController()
         // 権限なければ権限画面へ
-        val startDestination = if (PermissionCheckTool.isGrantedPermission(context)) NavigationLinkList.HomeScreen else NavigationLinkList.PermissionScreen
+        val backStack = rememberNavBackStack(if (PermissionCheckTool.isGrantedPermission(context)) NavigationLinkList.HomeScreen else NavigationLinkList.PermissionScreen)
 
-        NavHost(navController = navController, startDestination = startDestination) {
-            composable(NavigationLinkList.PermissionScreen) {
-                PermissionScreen(
-                    onGranted = { navController.navigate(NavigationLinkList.HomeScreen) }
-                )
+        NavDisplay(
+            backStack = backStack,
+            entryProvider = entryProvider {
+                entry<NavigationLinkList.PermissionScreen> {
+                    PermissionScreen(
+                        onGranted = {
+                            // 履歴配列から消してホームを出す
+                            backStack += NavigationLinkList.HomeScreen
+                            backStack -= NavigationLinkList.PermissionScreen
+                        }
+                    )
+                }
+                entry<NavigationLinkList.HomeScreen> {
+                    HomeScreen(
+                        onNavigate = { dest -> backStack += dest }
+                    )
+                }
+                entry<NavigationLinkList.SettingScreen> {
+                    SettingScreen(
+                        onNavigate = { dest -> backStack += dest },
+                        onBack = { backStack.removeLastOrNull() }
+                    )
+                }
+                entry<NavigationLinkList.SettingLicenseScreen> {
+                    LicenseScreen(
+                        onBack = { backStack.removeLastOrNull() }
+                    )
+                }
             }
-            composable(NavigationLinkList.HomeScreen) {
-                HomeScreen(
-                    onNavigate = { navController.navigate(it) }
-                )
-            }
-            composable(NavigationLinkList.SettingScreen) {
-                SettingScreen(
-                    onNavigate = { navController.navigate(it) },
-                    onBack = { navController.popBackStack() }
-                )
-            }
-            composable(NavigationLinkList.SettingLicenseScreen) {
-                LicenseScreen(
-                    onBack = { navController.popBackStack() }
-                )
-            }
-        }
+        )
     }
 }

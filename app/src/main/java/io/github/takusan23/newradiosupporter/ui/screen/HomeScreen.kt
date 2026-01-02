@@ -49,7 +49,7 @@ private val CardTonalElevation = 1.dp
  * */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onNavigate: (String) -> Unit) {
+fun HomeScreen(onNavigate: (NavigationLinkList) -> Unit) {
     val context = LocalContext.current
     // スクロールしたら AppBar を小さくするやつ
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()

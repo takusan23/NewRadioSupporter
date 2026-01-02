@@ -35,7 +35,7 @@ import io.github.takusan23.newradiosupporter.ui.component.CommonItem
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingScreen(
-    onNavigate: (String) -> Unit,
+    onNavigate: (NavigationLinkList) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current

@@ -1,18 +1,26 @@
 package io.github.takusan23.newradiosupporter.ui.screen
 
-/** 遷移先一覧 */
-object NavigationLinkList {
+import androidx.navigation3.runtime.NavKey
+import kotlinx.serialization.Serializable
 
+/**
+ * 遷移先一覧
+ * 型安全も何もそもそも引数がないんだけど、、、
+ */
+sealed interface NavigationLinkList : NavKey {
     /** 権限下さい画面 */
-    const val PermissionScreen = "permission_screen"
+    @Serializable
+    data object PermissionScreen : NavigationLinkList
 
     /** ホーム画面 */
-    const val HomeScreen = "home_screen"
+    @Serializable
+    data object HomeScreen : NavigationLinkList
 
     /** 実質設定画面みたいなやつ */
-    const val SettingScreen = "setting_screen"
+    @Serializable
+    data object SettingScreen : NavigationLinkList
 
     /** ライセンス画面 */
-    const val SettingLicenseScreen = "setting_license_screen"
-
+    @Serializable
+    data object SettingLicenseScreen : NavigationLinkList
 }
