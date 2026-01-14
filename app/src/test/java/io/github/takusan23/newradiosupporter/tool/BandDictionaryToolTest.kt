@@ -101,6 +101,8 @@ class BandDictionaryToolTest {
         val nrarfcnN48N77N78 = 643334
         // バンド n20 n28 に一致する NR-ARFCN
         val nrarfcnN20N28 = 159630
+        // バンド n38 n41 に一致する NR-ARFCN
+        val nrarfcnN38N41 = 522990
 
         // ドコモ なら n78
         // au softbank 楽天 なら 77 になるべき
@@ -122,6 +124,13 @@ class BandDictionaryToolTest {
             Assert.assertEquals(BandDictionaryTool.tryFixNrBand(au.first, au.second, nrarfcn, maybeBand), "n28")
             Assert.assertEquals(BandDictionaryTool.tryFixNrBand(softbank.first, softbank.second, nrarfcn, maybeBand), "n28")
             Assert.assertEquals(BandDictionaryTool.tryFixNrBand(rakuten.first, rakuten.second, nrarfcn, maybeBand), "n28")
+        }
+
+        // 愚直に計算するとバンド n38 だが、au では提供してないため n41 になるべき
+        nrarfcnN38N41.also { nrarfcn ->
+            val bandN38N41 = BandDictionaryTool.toNrBandList(nrarfcn)
+            val maybeBand = bandN38N41.first()
+            Assert.assertEquals(BandDictionaryTool.tryFixNrBand(au.first, au.second, nrarfcn, maybeBand), "n41")
         }
     }
 

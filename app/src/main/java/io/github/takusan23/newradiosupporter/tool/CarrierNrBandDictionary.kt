@@ -9,6 +9,10 @@ import io.github.takusan23.newradiosupporter.tool.data.CarrierNrBandData
  *
  * そのため、日本だけですが、通信キャリアが提供している 5G バンドを優先的に探すようにします。
  * そのためには提供しているバンドを用意しておく必要があるので書きました。
+ *
+ * 出典は
+ * バンドは各キャリアのサイト
+ * MCC/MNC（PLMN）は総務省より→電気通信番号指定状況
  */
 object CarrierNrBandDictionary {
 
@@ -31,21 +35,22 @@ object CarrierNrBandDictionary {
         // au
         CarrierNrBandData(
             mcc = "440",
-            mnc = listOf("50", "51", "52", "53", "54"),
+            mnc = listOf("01", "50", "51", "52", "53", "54", "55"),
             provideNrBandList = listOf(
                 "n28",
                 "n3",
-                "n40", // 2024年から？
+                "n40",
+                "n41",
                 "n77",
                 "n78",
                 "n257"
             )
         ),
 
-        // ソフトバンク
+        // ソフトバンク、ワイモバイル
         CarrierNrBandData(
             mcc = "440",
-            mnc = listOf("20"),
+            mnc = listOf("00", "20", "21"),
             provideNrBandList = listOf(
                 "n3",
                 "n28",
